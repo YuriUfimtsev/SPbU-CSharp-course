@@ -48,8 +48,8 @@ StringBuilder WriteMathematicalExpectationAndStandardDeviationInFile(
         var randomVariableValues = new double[N];
         for (var j = 0; j < N; ++j)
         {
-            var firstMultiplier = new Matrix($"..\\..\\..\\Data{i + 1}_firstMultiplier.txt");
-            var secondMultiplier = new Matrix($"..\\..\\..\\Data{i + 1}_secondMultiplier.txt");
+            var firstMultiplier = new Matrix($"../../../Data{i + 1}_firstMultiplier.txt");
+            var secondMultiplier = new Matrix($"../../../Data{i + 1}_secondMultiplier.txt");
             stopwatch.Start();
             var multiplicationResult = isCoherentMultiplication
                 ? firstMultiplier.CoherentMultiplyMatrices(secondMultiplier)
@@ -75,10 +75,10 @@ for (var i = 0; i < 3; ++i)
     var secondMultiplier = Matrix.CreateRandomMatrix(1300, (i + 1) * 500);
     matricesArray.SetValue(firstMultiplier, i);
     matrixMultipliersArray.SetValue(secondMultiplier, i);
-    firstMultiplier.SaveToFile($"..\\..\\..\\Data{i + 1}_firstMultiplier.txt");
-    secondMultiplier.SaveToFile($"..\\..\\..\\Data{i + 1}_secondMultiplier.txt");
+    firstMultiplier.SaveToFile($"../../../Data{i + 1}_firstMultiplier.txt");
+    secondMultiplier.SaveToFile($"../../../Data{i + 1}_secondMultiplier.txt");
 }
 
 var coherentMatrixMultiplicationEvaluation = FillMatrixMultiplicationEvaluationArray(true);
 var parallelMatrixMultiplicationEvaluation = FillMatrixMultiplicationEvaluationArray(false);
-SaveResultsInTable("..\\..\\..\\Report.txt", coherentMatrixMultiplicationEvaluation, parallelMatrixMultiplicationEvaluation);
+SaveResultsInTable("../../../Report.txt", coherentMatrixMultiplicationEvaluation, parallelMatrixMultiplicationEvaluation);

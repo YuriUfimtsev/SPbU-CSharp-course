@@ -3,6 +3,11 @@
 ##
 ## Get latest from https://github.com/github/gitignore/blob/master/VisualStudio.gitignore
 
+# Ignore unimportant files
+Homework1/ParallelMatrixMultiplicationTests/Properties/Resources.Designer.cs
+Homework1/ParallelMatrixMultiplicationTests/Properties/Resources.resx
+Homework1/ParallelMatrixMultiplicationTests/Properties/launchSettings.json
+
 # User-specific files
 *.rsuser
 *.suo

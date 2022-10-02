@@ -1,12 +1,11 @@
-﻿namespace Lazy;
+﻿using System;
 
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Security.Cryptography.X509Certificates;
-using System.Text;
-using System.Threading.Tasks;
+namespace Lazy;
 
+/// <summary>
+/// Implements lazy calculations in parallel.
+/// </summary>
+/// <typeparam name="T"> The type of the return value of the lazy object function.</typeparam>
 public class MultiThreadedLazy<T> : ILazy<T>
 {
     private readonly Func<T> supplier;
@@ -14,6 +13,10 @@ public class MultiThreadedLazy<T> : ILazy<T>
     private volatile bool isResultCalculate;
     private object synchronizationObject;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="MultiThreadedLazy{T}"/> class.
+    /// </summary>
+    /// <param name="supplier"> Lazy object function.</param>
     public MultiThreadedLazy(Func<T> supplier)
     {
         this.supplier = supplier;
@@ -21,6 +24,10 @@ public class MultiThreadedLazy<T> : ILazy<T>
         this.isResultCalculate = false;
     }
 
+    /// <summary>
+    /// Сalculates the result only on the first call. Then returns it.
+    /// </summary>
+    /// <returns> Result of the lazy object function.</returns>
     public T? Get()
     {
         if (!this.isResultCalculate)

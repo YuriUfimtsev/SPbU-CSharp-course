@@ -1,7 +1,6 @@
-﻿using Lazy;
-using System.Diagnostics;
+﻿namespace LazyTests;
 
-namespace LazyTests;
+using Lazy;
 
 public class MultiThreadedLazyTests
 {

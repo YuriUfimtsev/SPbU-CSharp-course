@@ -1,11 +1,10 @@
 ﻿namespace LazyTests;
 
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
+/// <summary>
+/// Implements functions for LazyTest that return a single value.
+/// </summary>
 public static class TestFunctions
 {
     public static bool GuessNumber()

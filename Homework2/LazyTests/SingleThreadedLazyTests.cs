@@ -13,7 +13,7 @@ public class SingleThreadedLazyTests
 
     private static Func<object>[] referenceTypeFunctions =
     {
-        () => TestFunctions.ÑoncatenateString(),
+        () => TestFunctions.ConcatenateString(),
         () => TestFunctions.CreateNewObject(),
     };
 

@@ -5,54 +5,46 @@ namespace LazyTests;
 
 public class MultiThreadedLazyTests
 {
+    private static int testIterationsNumber = 1000;
+    private static ManualResetEvent testIterationStarted = new ManualResetEvent(false);
+
     [Test]
     public void MultiThreadedTest()
     {
         var random = new Random();
-        var lazyObject = new MultiThreadedLazy<DateTime>(() => DateTime.Now);
-        var stopWatch = new Stopwatch();
-
         var threads = new Thread[Environment.ProcessorCount];
-        var threadsCalculationResult = new DateTime[threads.Length];
-        var threadsStartingCalculationTime = new TimeSpan[Environment.ProcessorCount];
-        for (var i = 0; i < threads.Length; ++i)
+        var threadsCalculationResult = new int[threads.Length];
+        for (var k = 0; k < testIterationsNumber; ++k)
         {
-            var locali = i;
-            threads[i] = new Thread(() =>
+            testIterationStarted.Reset();
+            var lazyObject = new MultiThreadedLazy<int>(() => random.Next(1000));
+
+            for (var i = 0; i < threads.Length; ++i)
             {
-                threadsStartingCalculationTime[locali] = stopWatch.Elapsed;
-                threadsCalculationResult[locali] = lazyObject.Get();
-            });
-        }
+                var locali = i;
+                threads[i] = new Thread(() =>
+                {
+                    var p = testIterationStarted.WaitOne();
+                    threadsCalculationResult[locali] = lazyObject.Get();
+                });
+            }
 
-        stopWatch.Start();
-        foreach (var thread in threads)
-        {
-            thread.Start();
-        }
-
-        foreach (var thread in threads)
-        {
-            thread.Join();
-        }
-
-        stopWatch.Stop();
-
-        var firstThread = Array.IndexOf(
-            threadsStartingCalculationTime,
-            threadsStartingCalculationTime.Min());
-        var result = threadsCalculationResult[0];
-        for (var i = 0; i < threads.Length; ++i)
-        {
-            Assert.That(result, Is.EqualTo(threadsCalculationResult[i]));
-        }
-
-        var abs = result.Subtract(threadsStartingCalculationTime[firstThread]);
-        for (var i = 0; i < threads.Length; ++i)
-        {
-            if (i != firstThread)
+            foreach (var thread in threads)
             {
-                Assert.That(abs, Is.GreaterThanOrEqualTo(result.Subtract(threadsStartingCalculationTime[i])));
+                thread.Start();
+            }
+
+            testIterationStarted.Set();
+
+            foreach (var thread in threads)
+            {
+                thread.Join();
+            }
+
+            for (var j = 0; j < threads.Length - 1; ++j)
+            {
+                Assert.That(threadsCalculationResult[j], Is.EqualTo(threadsCalculationResult[j + 1]));
+                threadsCalculationResult[j] = random.Next(1000);
             }
         }
     }

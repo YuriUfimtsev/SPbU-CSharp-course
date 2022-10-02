@@ -24,7 +24,7 @@ public static class TestFunctions
         return firstArgument + secondArgument;
     }
 
-    public static string СoncatenateString()
+    public static string ConcatenateString()
     {
         var random = new Random();
         var stringLength = random.Next(5);

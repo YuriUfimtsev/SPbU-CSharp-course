@@ -30,16 +30,10 @@ public class MyThreadPool
         }
     }
 
-    public IMyTask<object> Submit(Func<object> function)
+    public IMyTask<TResult> Submit<TResult>(Func<TResult> function, ManualResetEvent? parentalTaskResetEvent)
     {
-        var myTask = new MyTask<object>(function, this);
-        this.tasksQueue.Enqueue(() => myTask.Compute());
-        return myTask;
-    }
-
-    public IMyTask<object> ContinuationSubmit(Func<object> function, ManualResetEvent parentalTaskResetEvent)
-    {
-        var myTask = new MyTask<object>(function, this, parentalTaskResetEvent);
+        var myTask = parentalTaskResetEvent == null ? new MyTask<TResult>(function, this)
+            : new MyTask<TResult>(function, this, parentalTaskResetEvent);
         this.tasksQueue.Enqueue(() => myTask.Compute());
         return myTask;
     }

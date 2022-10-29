@@ -11,5 +11,5 @@ public interface IMyTask<TResult>
 
     public TResult Result { get; }
 
-    public IMyTask<object> ContinueWith(Func<TResult, object> func);
+    public IMyTask<TNewResult> ContinueWith<TNewResult>(Func<TResult, TNewResult> func);
 }

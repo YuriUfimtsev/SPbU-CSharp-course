@@ -58,9 +58,9 @@ public class MyTask<TResult> : IMyTask<TResult>
         }
     }
 
-    public IMyTask<object> ContinueWith(Func<TResult, object> nextFunction)
+    public IMyTask<TNewResult> ContinueWith<TNewResult>(Func<TResult, TNewResult> nextFunction)
     {
-        return this.myThreadPool.ContinuationSubmit(() => nextFunction(this.Result), this.continuationResetEvent);
+        return this.myThreadPool.Submit(() => nextFunction(this.Result), this.continuationResetEvent);
     }
 
     public void Compute()

@@ -48,6 +48,11 @@ public class MyTask<TResult> : IMyTask<TResult>
     {
         get
         {
+            if (this.myThreadPool.IsShutdownRequested && !this.isResultReady)
+            {
+                throw new ShutdownRequestedException("Function wasn't started when the Shutdown was requested.");
+            }
+
             this.accessToResultEvent.WaitOne();
             if (this.caughtException != null)
             {

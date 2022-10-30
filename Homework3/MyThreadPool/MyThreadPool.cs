@@ -10,10 +10,7 @@ using System.Threading;
 
 public class MyThreadPool
 {
-    private int acceptedActionsNumberForManualResetEvent;
     private int millisecondsTimeoutForTaskInJoiningThread;
-    private int timeSpanInActionsWhileAllThreadsWork = 1;
-    private int acceptedActionsCount;
     private ConcurrentQueue<Action> tasksQueue;
     private MyThread[] myThreadArray;
     private CancellationTokenSource cancellationTokenSource;
@@ -23,8 +20,7 @@ public class MyThreadPool
 
     public MyThreadPool(
         int threadCount,
-        int maxDelayTimeForThreadPoolShutdown = 30000,
-        int functionsNumberToWakeUpAllThreads = 5)
+        int maxDelayTimeForThreadPoolShutdown = 30000)
     {
         if (threadCount <= 0)
         {
@@ -44,7 +40,6 @@ public class MyThreadPool
             this.myThreadArray[i] = new MyThread(this, this.cancellationTokenSource.Token);
         }
 
-        this.acceptedActionsNumberForManualResetEvent = functionsNumberToWakeUpAllThreads;
         this.millisecondsTimeoutForTaskInJoiningThread = maxDelayTimeForThreadPoolShutdown / threadCount;
     }
 
@@ -65,18 +60,6 @@ public class MyThreadPool
         var myTask = parentalTaskResetEvent == null ? new MyTask<TResult>(function, this)
             : new MyTask<TResult>(function, this, parentalTaskResetEvent);
         this.tasksQueue.Enqueue(() => myTask.Compute());
-        ++this.acceptedActionsCount;
-        if (this.acceptedActionsCount % this.acceptedActionsNumberForManualResetEvent == 0)
-        {
-            this.manualResetEvent.Set();
-        }
-
-        if (this.acceptedActionsCount % this.acceptedActionsNumberForManualResetEvent
-            == this.timeSpanInActionsWhileAllThreadsWork)
-        {
-            this.manualResetEvent.Reset();
-        }
-
         this.autoResetEvent.Set();
         return myTask;
     }
@@ -134,6 +117,15 @@ public class MyThreadPool
                         this.IsWaiting = true;
                         this.taskForComputing = null;
                     }
+                }
+
+                if (this.myThreadPool.tasksQueue.Count > 0)
+                {
+                    this.myThreadPool.manualResetEvent.Set();
+                }
+                else
+                {
+                    this.myThreadPool.manualResetEvent.Reset();
                 }
             }
         }

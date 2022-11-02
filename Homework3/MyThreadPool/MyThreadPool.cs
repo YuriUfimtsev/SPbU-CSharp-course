@@ -8,6 +8,9 @@ using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading;
 
+/// <summary>
+/// Implements the ThreadPool abstraction.
+/// </summary>
 public class MyThreadPool
 {
     private int millisecondsTimeoutForTaskInJoiningThread;
@@ -18,6 +21,12 @@ public class MyThreadPool
     private ManualResetEvent manualResetEvent;
     private WaitHandle[] resetEventsArray;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="MyThreadPool"/> class.
+    /// </summary>
+    /// <param name="threadCount">Number of this ThreadPool threads.</param>
+    /// <param name="maxDelayTimeForThreadPoolShutdown">Time in milliseconds that you are ready waiting for Shutdown method.</param>
+    /// <exception cref="InvalidDataException">Throws if the number of this ThreadPool threads less than or equal to zero.</exception>
     public MyThreadPool(
         int threadCount,
         int maxDelayTimeForThreadPoolShutdown = 30000)
@@ -43,10 +52,19 @@ public class MyThreadPool
         this.millisecondsTimeoutForTaskInJoiningThread = maxDelayTimeForThreadPoolShutdown / threadCount;
     }
 
+    /// <summary>
+    /// Gets the number of this ThreadPool threads.
+    /// </summary>
     public int ThreadCount { get; }
 
+    /// <summary>
+    /// Gets a value indicating whether this Threadpool's Shutdown was requested.
+    /// </summary>
     public bool IsShutdownRequested { get; private set; }
 
+    /// <summary>
+    /// Gets a value indicating whether all tasks given to the ThreadPool are being computed.
+    /// </summary>
     public bool AreAllTasksInProgress
     {
         get
@@ -55,6 +73,13 @@ public class MyThreadPool
         }
     }
 
+    /// <summary>
+    /// Submits new task to the ThreadPool.
+    /// </summary>
+    /// <typeparam name="TResult">Return value type of the task function.</typeparam>
+    /// <param name="function">Task function.</param>
+    /// <param name="parentalTaskResetEvent">Parental task ManualResetEvent (for continuation task).</param>
+    /// <returns>Task.</returns>
     public IMyTask<TResult> Submit<TResult>(Func<TResult> function, ManualResetEvent? parentalTaskResetEvent = null)
     {
         var myTask = parentalTaskResetEvent == null ? new MyTask<TResult>(function, this)
@@ -64,6 +89,10 @@ public class MyThreadPool
         return myTask;
     }
 
+    /// <summary>
+    /// Shuts down the ThreadPool's work.
+    /// </summary>
+    /// <exception cref="EndlessFunctionException">Throws if the function hasn't been finished for definite time.</exception>
     public void ShutDown()
     {
         this.cancellationTokenSource.Cancel();

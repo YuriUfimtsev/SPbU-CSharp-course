@@ -7,6 +7,10 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
 
+/// <summary>
+/// Implements task abstraction.
+/// </summary>
+/// <typeparam name="TResult">Return value type of task function.</typeparam>
 public class MyTask<TResult> : IMyTask<TResult>
 {
     private bool isContinuation;
@@ -21,29 +25,37 @@ public class MyTask<TResult> : IMyTask<TResult>
     private Exception? caughtException;
     private MyThreadPool myThreadPool;
 
-    public MyTask(Func<TResult> function, MyThreadPool myThreadPool)
-    {
-        this.function = function;
-        this.accessToResultEvent = new ManualResetEvent(false);
-        this.myThreadPool = myThreadPool;
-        this.continuationResetEvent = new ManualResetEvent(false);
-    }
-
+    /// <summary>
+    /// Initializes a new instance of the <see cref="MyTask{TResult}"/> class.
+    /// </summary>
+    /// <param name="function">Task function.</param>
+    /// <param name="myThreadPool">ThreadPool that will execute this task.</param>
+    /// <param name="previousTaskContinuationResetEvent">Parental task ManualResetEvent (for continuation task).</param>
     public MyTask(
         Func<TResult> function,
         MyThreadPool myThreadPool,
-        ManualResetEvent previousTaskContinuationResetEvent)
+        ManualResetEvent? previousTaskContinuationResetEvent = null)
     {
         this.function = function;
         this.accessToResultEvent = new ManualResetEvent(false);
         this.myThreadPool = myThreadPool;
-        this.isContinuation = true;
+        if (previousTaskContinuationResetEvent != null)
+        {
+            this.isContinuation = true;
+        }
+
         this.parentalContinuationResetEvent = previousTaskContinuationResetEvent;
         this.continuationResetEvent = new ManualResetEvent(false);
     }
 
+    /// <summary>
+    /// Gets a value indicating whether the task result is ready.
+    /// </summary>
     public bool IsCompleted => this.isResultReady;
 
+    /// <summary>
+    /// Gets the task result.
+    /// </summary>
     public TResult Result
     {
         get
@@ -63,11 +75,20 @@ public class MyTask<TResult> : IMyTask<TResult>
         }
     }
 
-    public IMyTask<TNewResult> ContinueWith<TNewResult>(Func<TResult, TNewResult> nextFunction)
+    /// <summary>
+    /// Creates a new task based on this task.
+    /// </summary>
+    /// <typeparam name="TNewResult">Return value type for the new task function.</typeparam>
+    /// <param name="func">Intermediate function for creating a new task.</param>
+    /// <returns>Task with new return value type of the function.</returns>
+    public IMyTask<TNewResult> ContinueWith<TNewResult>(Func<TResult, TNewResult> func)
     {
-        return this.myThreadPool.Submit(() => nextFunction(this.Result), this.continuationResetEvent);
+        return this.myThreadPool.Submit(() => func(this.Result), this.continuationResetEvent);
     }
 
+    /// <summary>
+    /// Calculates task result.
+    /// </summary>
     public void Compute()
     {
         try

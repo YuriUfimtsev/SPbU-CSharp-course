@@ -27,14 +27,14 @@ public class MyThreadPoolTests
             });
         }
 
-        Thread.Sleep(1000);
+        Thread.Sleep(60);
         Assert.That(this.myThreadPool.AreAllTasksInProgress);
         this.myThreadPool.Submit(() =>
         {
             this.manualResetEvent.WaitOne();
             return 0;
         });
-        Thread.Sleep(1000);
+        Thread.Yield();
         Assert.That(!this.myThreadPool.AreAllTasksInProgress);
         this.manualResetEvent.Set();
         this.myThreadPool.ShutDown();
@@ -104,8 +104,6 @@ public class MyThreadPoolTests
             {
                 return locali.ToString();
             });
-
-            Thread.Sleep(1000);
         }
 
         var expectedResultArray = new string[taskArray.Length];
@@ -130,12 +128,12 @@ public class MyThreadPoolTests
             taskArray[i] = this.myThreadPool.Submit(() =>
             {
                 this.manualResetEvent.WaitOne();
-                Thread.Sleep(1000);
+                Thread.Sleep(200);
                 return locali.ToString();
             });
         }
 
-        Thread.Sleep(1000);
+        Thread.Sleep(60);
         this.manualResetEvent.Set();
         this.myThreadPool.ShutDown();
         for (var j = 0; j < this.threadsInMyThreadPoolCount + 2; ++j)
@@ -191,7 +189,6 @@ public class MyThreadPoolTests
             return ThrowException();
         });
 
-        Thread.Sleep(1000);
         try
         {
             var result = newTask.Result;
@@ -219,7 +216,7 @@ public class MyThreadPoolTests
     {
         var taskArray = new IMyTask<int>[this.threadsInMyThreadPoolCount * 4];
         var myTask = myThreadPool.Submit(() => CalculateArithmeticProgression(1000));
-        Thread.Sleep(1000);
+        Thread.Sleep(60); // Time to complete the myTask calculation.
         for (var i = 0; i < this.threadsInMyThreadPoolCount * 4; ++i)
         {
             taskArray[i] = myTask.ContinueWith((x) =>
@@ -230,7 +227,7 @@ public class MyThreadPoolTests
 
             if (i == this.threadsInMyThreadPoolCount - 1)
             {
-                Thread.Sleep(1000);
+                Thread.Sleep(60);
                 Assert.That(myThreadPool.AreAllTasksInProgress, Is.True);
             }
         }
@@ -276,7 +273,7 @@ public class MyThreadPoolTests
     public void CorrectShutdownWorkWithContinuationTest()
     {
         var myTask = myThreadPool.Submit(() => CalculateArithmeticProgression(1000));
-        Thread.Sleep(1000);
+        Thread.Sleep(60);
         var taskArray = new IMyTask<int>[this.threadsInMyThreadPoolCount + 2];
         for (var i = 0; i < this.threadsInMyThreadPoolCount + 2; ++i)
         {
@@ -284,13 +281,13 @@ public class MyThreadPoolTests
             taskArray[i] = myTask.ContinueWith((x) =>
             {
                 this.manualResetEvent.WaitOne();
-                Thread.Sleep(1000);
+                Thread.Sleep(200);
                 var result = x + locali;
                 return result;
             });
         }
 
-        Thread.Sleep(1000);
+        Thread.Sleep(60);
         this.manualResetEvent.Set();
         this.myThreadPool.ShutDown();
         for (var j = 0; j < this.threadsInMyThreadPoolCount + 2; ++j)

@@ -16,8 +16,7 @@ public class CheckSum
 
     public CheckSum(string path)
     {
-        var PointPosition = path.IndexOf('.');
-        this.isDirectory = PointPosition == -1;
+        this.isDirectory = !Path.HasExtension(path);
         this.mainPath = path;
     }
 

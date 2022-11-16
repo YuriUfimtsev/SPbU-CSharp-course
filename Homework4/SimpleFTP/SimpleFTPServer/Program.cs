@@ -1,5 +1,6 @@
-﻿using System.Net.Sockets;
-using System.Net;
+﻿using System.Net;
+using System.Net.Sockets;
+using System.Text;
 
 const int port = 8888;
 var listener = new TcpListener(IPAddress.Any, port);
@@ -20,9 +21,9 @@ var task = Task.Run(async () =>
 
         var response = GenerateResponse(data);
 
-        Console.WriteLine($"Sending \"Hi!\"");
+        Console.WriteLine($"Sending \"{response}\"");
         var writer = new StreamWriter(stream);
-        await writer.WriteAsync("Hi!");
+        await writer.WriteAsync(response);
         await writer.FlushAsync();
         socket.Close();
     });
@@ -30,12 +31,59 @@ var task = Task.Run(async () =>
 
 string GenerateResponseToList(string pathToDirectory)
 {
+    var response = new StringBuilder();
+    try
+    {
+        var subDirectories = Directory.GetDirectories(pathToDirectory);
+        var files = Directory.GetFiles(pathToDirectory);
+        response.Append((subDirectories.Length + files.Length).ToString());
+        foreach (var directory in subDirectories)
+        {
+            response.Append(' ');
+            response.Append($"{directory} true");
+        }
 
+        foreach (var file in files)
+        {
+            response.Append(' ');
+            response.Append($"{file} false");
+        }
+    }
+    catch (DirectoryNotFoundException)
+    {
+        response.Clear();
+        response.Append("-1");
+        return response.ToString();
+    }
+
+    return response.ToString();
 }
 
 string GenerateResponseToGet(string pathToFile)
 {
+    var response = new StringBuilder();
+    try
+    {
+        var files = Directory.GetFiles(pathToFile);
+        if (files.Length < 1 || files.Length > 1)
+        {
+            response.Append("-1");
+            return response.ToString();
+        }
 
+        var fileContent = File.ReadAllBytes(files[0]);
+        response.Append(fileContent.Length.ToString());
+        response.Append(' ');
+        response.AppendLine(Encoding.Default.GetString(fileContent));
+    }
+    catch (DirectoryNotFoundException)
+    {
+        response.Clear();
+        response.Append("-1");
+        return response.ToString();
+    }
+
+    return response.ToString();
 }
 
 string GenerateResponse(string requestData)

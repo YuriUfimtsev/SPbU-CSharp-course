@@ -2,72 +2,71 @@
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.CompilerServices;
 using System.Text;
-using System.Threading.Tasks;
 using System.IO;
-using System.Security;
 
-public class CheckSum
+public static class CheckSum
 {
-    private string mainPath;
-    private bool isDirectory;
-
-    public CheckSum(string path)
+    public static byte[] ComputeCheckSum(string directory)
     {
-        this.isDirectory = !Path.HasExtension(path);
-        this.mainPath = path;
+        if (directory == null)
+        {
+            throw new InvalidDataException("Incorrect path.");
+        }
+
+        if (Path.HasExtension(directory))
+        {
+            try
+            {
+                var fileCheckSum = ComputeFileHash(directory);
+                return fileCheckSum;
+            }
+            catch (Exception exception)
+            {
+                throw new AggregateException($"File {directory} hasn't been cached because '{exception}' Exception caught.");
+            }
+        }
+
+        var result = ComputeHash(directory);
+        return result;
     }
 
-    public byte[]? ComputeCheckSum()
+    private static byte[] ComputeHash(string directory)
     {
-        if (this.mainPath == null)
-        {
-            return null;
-        }
-
-        if (!this.isDirectory)
-        {
-            var result = ComputeFileHash(mainPath);
-            return result;
-        }
-
-        var pathToFileList = new List<string>();
         var hashValues = new List<byte[]>();
-        var subdirectories = Directory.GetDirectories(this.mainPath);
-        if (subdirectories == null || subdirectories.Length == 0)
+        var subdirectories = Directory.GetDirectories(directory);
+        var filesInMainDirectory = Directory.GetFiles(directory);
+        Array.Sort(subdirectories);
+        Array.Sort(filesInMainDirectory);
+        for (var i = 0; i < filesInMainDirectory.Length; ++i)
         {
-            Console.WriteLine("No files and folders in this path.");
-            return null;
-        }
-
-        foreach (var subdirectory in subdirectories)
-        {
-            foreach (var pathToFile in Directory.GetFiles(subdirectory))
+            try
             {
-                pathToFileList.Add(pathToFile);
+                var hash = ComputeFileHash(filesInMainDirectory[i]);
+                if (hash != null)
+                {
+                    hashValues.Add(hash);
+                }
+            }
+            catch (Exception exception)
+            {
+                Console.WriteLine($"File {filesInMainDirectory[i]} hasn't been cached because '{exception}' Exception caught.");
             }
         }
 
-        pathToFileList.Sort();
-
-        for (var i = 0; i < pathToFileList.Count; ++i)
+        for (var i = 0; i < subdirectories.Length; ++i)
         {
-            var fileHash = ComputeFileHash(pathToFileList[i]);
-            if (fileHash != null)
-            {
-                hashValues.Add(fileHash);
-            }
+            var directoryHash = ComputeHash(subdirectories[i]);
+            hashValues.Add(directoryHash);
         }
 
-        var resultHash = ConcatenateByteArraysAndDirectoryPath(hashValues);
-        return resultHash;
+        var result = ConcatenateByteArraysAndDirectoryPath(hashValues, directory);
+        return result;
     }
 
-    private byte[] ConcatenateByteArraysAndDirectoryPath(List<byte[]> byteArrays)
+    private static byte[] ConcatenateByteArraysAndDirectoryPath(List<byte[]> byteArrays, string directoryPath)
     {
-        var directoryPathInBytes = Encoding.ASCII.GetBytes(this.mainPath);
+        var directoryPathInBytes = Encoding.ASCII.GetBytes(directoryPath);
         var resultArrayLength = directoryPathInBytes.Length;
         foreach (var byteArray in byteArrays)
         {
@@ -87,18 +86,10 @@ public class CheckSum
         return resultByteArray;
     }
 
-    private byte[]? ComputeFileHash(string pathToFile)
+    private static byte[] ComputeFileHash(string pathToFile)
     {
-        try
-        {
-            var result = File.ReadAllBytes(pathToFile);
-            var fileHash = System.Security.Cryptography.MD5.HashData(result);
-            return fileHash;
-        }
-        catch (Exception exception)
-        {
-            Console.WriteLine($"File {pathToFile} hasn't been cached because '{exception}' Exception caught.");
-            return null;
-        }
+        var result = File.ReadAllBytes(pathToFile);
+        var fileHash = System.Security.Cryptography.MD5.HashData(result);
+        return fileHash;
     }
 }

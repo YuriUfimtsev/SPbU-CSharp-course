@@ -1,19 +1,20 @@
 ﻿using MD5;
-using System;
 
 var testPath = "C:/Users/Home/source/repos/SPbU-CSharp-course/Exam1/MD5";
 var test1Path = "../../../..";
 
-var newCheckSum = new CheckSum(test1Path);
-var checkSum = newCheckSum.ComputeCheckSum();
-if (checkSum == null)
+Console.WriteLine("Enter path to directory");
+string? path = Console.ReadLine();
+try
 {
-    Console.WriteLine("0");
-    return;
+    var checkSum = MD5.CheckSum.ComputeCheckSum(path!);
+    for (var i = 0; i < checkSum.Length; ++i)
+    {
+        Console.Write(checkSum[i]);
+        Console.Write(' ');
+    }
 }
-
-for (var i = 0; i < checkSum.Length; ++i)
+catch (Exception exception)
 {
-    Console.Write(checkSum[i]);
-    Console.Write(' ');
+    Console.WriteLine(exception.Message);
 }

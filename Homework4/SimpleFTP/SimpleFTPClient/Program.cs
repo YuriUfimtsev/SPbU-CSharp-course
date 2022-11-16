@@ -3,10 +3,12 @@
 const int port = 8888;
 using (var client = new TcpClient("localhost", port))
 {
-    Console.WriteLine($"Sending to port {port}...");
+    Console.WriteLine($"Sending \"Hello!\" to port {port}...");
     var stream = client.GetStream();
     var writer = new StreamWriter(stream);
-    writer.Write("Hello, world!111");
-    writer.Write("Hello, world!");
+    writer.WriteLine("Hello!");
     writer.Flush();
+    var reader = new StreamReader(stream);
+    var data = reader.ReadToEnd();
+    Console.WriteLine($"Received: {data}");
 }

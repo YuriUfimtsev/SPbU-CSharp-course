@@ -1,14 +1,51 @@
-﻿using System.Net.Sockets;
+﻿using System.Runtime.Intrinsics.X86;
 
-const int port = 8888;
-using (var client = new TcpClient("localhost", port))
+namespace SimpleFTPClient;
+
+public class Program
 {
-    Console.WriteLine($"Sending \"Hello!\" to port {port}...");
-    var stream = client.GetStream();
-    var writer = new StreamWriter(stream);
-    writer.WriteLine("Hello!");
-    writer.Flush();
-    var reader = new StreamReader(stream);
-    var data = reader.ReadToEnd();
-    Console.WriteLine($"Received: {data}");
+    public static async void Main(string[] args)
+    {
+        {
+            if (args.Length == 0 || args.Length > 2)
+            {
+                Console.WriteLine("Incorrect arguments");
+            }
+
+            var client = new Client(8888);
+            switch (args[0])
+            {
+                case "1":
+                    try
+                    {
+                        var result = await client.List(args[1]);
+                    }
+                    catch (AggregateException exception)
+                    {
+                        Console.WriteLine(exception.Message);
+                        return;
+                    }
+
+                    break;
+                case "2":
+                    try
+                    {
+                        var resultFileName = "GetResult.txt";
+                        using var fileStream = new FileStream(resultFileName, FileMode.Create);
+                        client.Get(args[1], fileStream);
+                        Console.WriteLine($"See the result in the file {resultFileName}");
+                    }
+                    catch (AggregateException exception)
+                    {
+                        Console.WriteLine(exception.Message);
+                        return;
+                    }
+
+                    break;
+                default:
+                    Console.WriteLine("Incorrect request number");
+                    break;
+            }
+        }
+    }
 }

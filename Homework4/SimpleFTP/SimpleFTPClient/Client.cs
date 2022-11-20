@@ -1,9 +1,7 @@
 ﻿namespace SimpleFTPClient;
 
 using System;
-using System.Collections;
 using System.Net.Sockets;
-using System.Runtime.CompilerServices;
 using System.Text;
 
 public class Client
@@ -15,13 +13,35 @@ public class Client
         this.port = port;
     }
 
-    public async void Get(string pathToFile, Stream outputStream)
+    public async Task<List<DirectoryElement>> List(string path)
     {
         using (var tcpClient = new TcpClient("localhost", this.port))
         {
             var stream = tcpClient.GetStream();
             var writer = new StreamWriter(stream);
-            await writer.WriteAsync($"1 {pathToFile}");
+            await writer.WriteAsync($"1 {path}\n");
+            await writer.FlushAsync();
+            var reader = new StreamReader(stream);
+            try
+            {
+                var data = await ReadListRequestData(reader);
+                return data;
+            }
+            catch (Exception exception)
+            {
+                throw Equals(exception, typeof(ArgumentException)) ?
+                    new InvalidPathException() : new InvalidServerResponseException();
+            }
+        }
+    }
+
+    public async Task Get(string pathToFile, Stream outputStream)
+    {
+        using (var tcpClient = new TcpClient("localhost", this.port))
+        {
+            var stream = tcpClient.GetStream();
+            var writer = new StreamWriter(stream);
+            await writer.WriteAsync($"2 {pathToFile}\n");
             await writer.FlushAsync();
             var reader = new StreamReader(stream);
             try
@@ -33,28 +53,8 @@ public class Client
             }
             catch (Exception exception)
             {
-                throw new AggregateException("Invalid server response", exception);
-            }
-        }
-    }
-
-    public async Task<List<DirectoryElement>> List(string path)
-    {
-        using (var tcpClient = new TcpClient("localhost", this.port))
-        {
-            var stream = tcpClient.GetStream();
-            var writer = new StreamWriter(stream);
-            await writer.WriteAsync($"2 {path}");
-            await writer.FlushAsync();
-            var reader = new StreamReader(stream);
-            try
-            {
-                var data = await ReadListRequestData(reader);
-                return data;
-            }
-            catch (Exception exception)
-            {
-                throw new AggregateException("Invalid server response", exception);
+                throw Equals(exception, typeof(ArgumentException)) ?
+                    new InvalidPathException() : new InvalidServerResponseException();
             }
         }
     }
@@ -63,13 +63,19 @@ public class Client
     {
         var result = new List<DirectoryElement>();
         var data = await streamReader.ReadLineAsync();
+        Console.WriteLine(data);
         if (data == null)
         {
-            throw new ArgumentNullException();
+            throw new InvalidDataException();
         }
 
         var dataArray = data.Split();
         var dataLength = int.Parse(dataArray[0]);
+        if (dataLength == -1)
+        {
+            throw new ArgumentException();
+        }
+
         for (var i = 1; i < dataLength; i += 2)
         {
             var boolValue = dataArray[i + 1] switch
@@ -90,12 +96,18 @@ public class Client
         var currentSymbol = new char[1];
         await streamReader.ReadAsync(currentSymbol, 0, 1);
         var data = new StringBuilder();
-        while (currentSymbol[0] != ' ')
+        while (currentSymbol[0] != ' ' && currentSymbol[0] != '\n')
         {
             data.Append(currentSymbol);
+            await streamReader.ReadAsync(currentSymbol, 0, 1);
         }
 
         var dataLength = int.Parse(data.ToString());
+        if (dataLength == -1)
+        {
+            throw new ArgumentException();
+        }
+
         var fileData = new char[dataLength];
         await streamReader.ReadAsync(fileData, 0, fileData.Length);
         return fileData;

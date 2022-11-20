@@ -5,23 +5,17 @@ using System.Text;
 const int port = 8888;
 var listener = new TcpListener(IPAddress.Any, port);
 listener.Start();
-Console.WriteLine($"Listening on port {port}...");
+Console.WriteLine("Ready to communicate");
 while (true)
 {
-var socket = await listener.AcceptSocketAsync();
-var task = Task.Run(async () =>
+    var socket = await listener.AcceptSocketAsync();
+    Console.WriteLine("The connection is established");
+    var task = Task.Run(async () =>
     {
         var stream = new NetworkStream(socket);
         var reader = new StreamReader(stream);
         var data = await reader.ReadLineAsync();
-        if (data == null)
-        {
-            return;
-        }
-
-        var response = GenerateResponse(data);
-
-        Console.WriteLine($"Sending \"{response}\"");
+        var response = data == null ? "-1" : GenerateResponse(data);
         var writer = new StreamWriter(stream);
         await writer.WriteAsync(response);
         await writer.FlushAsync();
@@ -48,15 +42,16 @@ string GenerateResponseToList(string pathToDirectory)
             response.Append(' ');
             response.Append($"{file} false");
         }
+
+        response.Append("\n");
+        return response.ToString();
     }
     catch (DirectoryNotFoundException)
     {
         response.Clear();
-        response.Append("-1");
+        response.Append("-1\n");
         return response.ToString();
     }
-
-    return response.ToString();
 }
 
 string GenerateResponseToGet(string pathToFile)
@@ -64,26 +59,26 @@ string GenerateResponseToGet(string pathToFile)
     var response = new StringBuilder();
     try
     {
-        var files = Directory.GetFiles(pathToFile);
-        if (files.Length < 1 || files.Length > 1)
+        if (!Path.HasExtension(pathToFile))
         {
-            response.Append("-1");
+            response.Append("-1\n");
             return response.ToString();
         }
 
-        var fileContent = File.ReadAllBytes(files[0]);
+        var fileContent = File.ReadAllBytes(pathToFile);
         response.Append(fileContent.Length.ToString());
         response.Append(' ');
         response.AppendLine(Encoding.Default.GetString(fileContent));
+
+        response.Append("\n");
+        return response.ToString();
     }
     catch (DirectoryNotFoundException)
     {
         response.Clear();
-        response.Append("-1");
+        response.Append("-1\n");
         return response.ToString();
     }
-
-    return response.ToString();
 }
 
 string GenerateResponse(string requestData)

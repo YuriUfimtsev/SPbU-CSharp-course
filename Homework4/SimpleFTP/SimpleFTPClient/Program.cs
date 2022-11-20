@@ -1,44 +1,30 @@
-﻿using System.Runtime.Intrinsics.X86;
-
-namespace SimpleFTPClient;
+﻿namespace SimpleFTPClient;
 
 public class Program
 {
-    public static async void Main(string[] args)
+    public static async Task Main(string[] args)
     {
+        const int port = 8888;
+        if (args.Length == 0 || args.Length > 2)
         {
-            if (args.Length == 0 || args.Length > 2)
-            {
-                Console.WriteLine("Incorrect arguments");
-            }
+            Console.WriteLine("Incorrect arguments");
+            return;
+        }
 
-            var client = new Client(8888);
+        var client = new Client(port);
+        try
+        {
             switch (args[0])
             {
                 case "1":
-                    try
-                    {
-                        var result = await client.List(args[1]);
-                    }
-                    catch (AggregateException exception)
-                    {
-                        Console.WriteLine(exception.Message);
-                        return;
-                    }
-
+                    var result = await client.List(args[1]);
                     break;
                 case "2":
-                    try
+                    var resultFileName = "GetResult.txt";
+                    using (var fileStream = new FileStream(resultFileName, FileMode.Create))
                     {
-                        var resultFileName = "GetResult.txt";
-                        using var fileStream = new FileStream(resultFileName, FileMode.Create);
-                        client.Get(args[1], fileStream);
+                        await client.Get(args[1], fileStream);
                         Console.WriteLine($"See the result in the file {resultFileName}");
-                    }
-                    catch (AggregateException exception)
-                    {
-                        Console.WriteLine(exception.Message);
-                        return;
                     }
 
                     break;
@@ -46,6 +32,14 @@ public class Program
                     Console.WriteLine("Incorrect request number");
                     break;
             }
+        }
+        catch (InvalidPathException)
+        {
+            Console.WriteLine("Non-existent path in the request");
+        }
+        catch (InvalidServerResponseException)
+        {
+            Console.WriteLine("Server error");
         }
     }
 }

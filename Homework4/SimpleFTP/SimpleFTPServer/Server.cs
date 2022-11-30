@@ -15,7 +15,7 @@ public class Server
         this.cancellationToken = cancellationToken;
     }
 
-    public static string GenerateResponseToList(string pathToDirectory)
+    private static string GenerateResponseToList(string pathToDirectory)
     {
         var response = new StringBuilder();
         try
@@ -46,7 +46,7 @@ public class Server
         }
     }
 
-    public static string GenerateResponseToGet(string pathToFile)
+    private static string GenerateResponseToGet(string pathToFile)
     {
         var response = new StringBuilder();
         try
@@ -97,7 +97,7 @@ public class Server
                 var stream = new NetworkStream(socket);
                 var reader = new StreamReader(stream);
                 var data = await reader.ReadLineAsync();
-                var response = data == null ? "-1" : GenerateResponse(data);
+                var response = data == null ? "-1\n" : GenerateResponse(data);
                 var writer = new StreamWriter(stream);
                 await writer.WriteAsync(response);
                 await writer.FlushAsync();

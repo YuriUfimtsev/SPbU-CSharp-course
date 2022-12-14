@@ -15,7 +15,7 @@ public class Program
                     return;
                 }
 
-                await Server.Run(serverPort);
+                await Server.Run(serverPort, Console.In, Console.Out);
                 break;
             case 2:
                 var clientPort = 0;
@@ -26,7 +26,7 @@ public class Program
                     return;
                 }
 
-                await Client.Run(clientPort, args[0]);
+                await Client.Run(clientPort, args[0], Console.In, Console.Out);
                 break;
             default:
                 Console.WriteLine("Incorrect input");

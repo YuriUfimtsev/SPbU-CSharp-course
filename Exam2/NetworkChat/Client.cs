@@ -4,27 +4,28 @@ namespace NetworkChat;
 
 public static class Client
 {
-    public static async Task Run(int port, string IPaddress)
+    public static async Task Run(int port, string IPaddress, TextReader userReader, TextWriter userWriter)
     {
         using (var tcpClient = new TcpClient(IPaddress, port))
         {
             var stream = tcpClient.GetStream();
-            var writer = new StreamWriter(stream);
-            var reader = new StreamReader(stream);
+            var serverWriter = new StreamWriter(stream);
+            var serverReader = new StreamReader(stream);
+
             while (true)
             {
-                var message = Console.ReadLine();
-                await writer.WriteLineAsync(message);
-                await writer.FlushAsync();
+                var message = userReader.ReadLine();
+                await serverWriter.WriteLineAsync(message);
+                await serverWriter.FlushAsync();
 
                 if (message == "exit")
                 {
                     break;
                 }
 
-                Console.WriteLine($"Sent: {message}");
-                var data = await reader.ReadLineAsync();
-                Console.WriteLine($"Received: {data}");
+                userWriter.WriteLine($"Sent: {message}");
+                var data = await serverReader.ReadLineAsync();
+                userWriter.WriteLine($"Received: {data}");
                 if (data == "exit")
                 {
                     break;

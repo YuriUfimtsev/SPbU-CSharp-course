@@ -8,9 +8,9 @@ public static class Client
     {
         using (var tcpClient = new TcpClient(IPaddress, port))
         {
-            var stream = tcpClient.GetStream();
-            var serverWriter = new StreamWriter(stream);
-            var serverReader = new StreamReader(stream);
+            using var stream = tcpClient.GetStream();
+            using var serverWriter = new StreamWriter(stream);
+            using var serverReader = new StreamReader(stream);
 
             while (true)
             {
@@ -23,9 +23,9 @@ public static class Client
                     break;
                 }
 
-                userWriter.WriteLine($"Sent: {message}");
+                await userWriter.WriteLineAsync($"Sent: {message}");
                 var data = await serverReader.ReadLineAsync();
-                userWriter.WriteLine($"Received: {data}");
+                await userWriter.WriteLineAsync($"Received: {data}");
                 if (data == "exit")
                 {
                     break;

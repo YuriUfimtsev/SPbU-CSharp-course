@@ -9,12 +9,12 @@ public static class Server
     {
         var listener = new TcpListener(IPAddress.Any, port);
         listener.Start();
-        Console.WriteLine("Ready to communicate");
-        var socket = await listener.AcceptSocketAsync();
-        Console.WriteLine("The connection is established");
-        var stream = new NetworkStream(socket);
-        var clientReader = new StreamReader(stream);
-        var clientWriter = new StreamWriter(stream);
+        await userWriter.WriteLineAsync("Ready to communicate");
+        using var socket = await listener.AcceptSocketAsync();
+        await userWriter.WriteLineAsync("The connection is established");
+        using var stream = new NetworkStream(socket);
+        using var clientReader = new StreamReader(stream);
+        using var clientWriter = new StreamWriter(stream);
         while (true)
         {
             var data = await clientReader.ReadLineAsync();
@@ -23,11 +23,11 @@ public static class Server
                 break;
             }
 
-            userWriter.WriteLine($"received: {data}");
+            await userWriter.WriteLineAsync($"received: {data}");
             var response = userReader.ReadLine();
             await clientWriter.WriteLineAsync(response);
             await clientWriter.FlushAsync();
-            userWriter.WriteLine($"Sent: {response}");
+            await userWriter.WriteLineAsync($"Sent: {response}");
             if (response == "exit")
             {
                 break;

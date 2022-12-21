@@ -25,15 +25,11 @@ public class ThreadSafePriorityQueueTests
         for (var i = 0; i < 10; ++i)
         {
             var locali = i;
-            for (var j = 0; j < 10; ++j)
+            threads[i] = new Thread(() =>
             {
-                var localj = j;
-                threads[j] = new Thread(() =>
-                {
-                    this.manualResetEvent.WaitOne();
-                    threadSafePriorityQueue.Enqueue(localj, localj);
-                });
-            }
+                this.manualResetEvent.WaitOne();
+                threadSafePriorityQueue.Enqueue(locali, locali);
+            });
         }
 
         foreach (var thread in threads)
@@ -67,16 +63,12 @@ public class ThreadSafePriorityQueueTests
         for (var i = 0; i < 10; ++i)
         {
             var locali = i;
-            for (var j = 0; j < 10; ++j)
+            threads[i] = new Thread(() =>
             {
-                var localj = j;
-                threads[j] = new Thread(() =>
-                {
-                    this.manualResetEvent.WaitOne();
-                    var result = threadSafePriorityQueue.Dequeue();
-                    threadsResult[locali] = result;
-                });
-            }
+                this.manualResetEvent.WaitOne();
+                var result = threadSafePriorityQueue.Dequeue();
+                threadsResult[locali] = result;
+            });
         }
 
         foreach (var thread in threads)
@@ -91,6 +83,7 @@ public class ThreadSafePriorityQueueTests
             thread.Join();
         }
 
+        Array.Sort(threadsResult);
         CollectionAssert.AreEqual(threadsResult, expectedResult);
     }
 }

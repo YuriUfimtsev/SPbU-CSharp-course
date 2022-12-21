@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.3.32922.545
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ThreadSafePriorityQueue", "ThreadSafePriorityQueue.csproj", "{50632621-8D5B-456B-8F91-58DB9D850194}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ThreadSafePriorityQueueTests", "..\ThreadSafePriorityQueueTests\ThreadSafePriorityQueueTests.csproj", "{540A1C1A-D0AA-4874-BFFA-B2AB8BB96119}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{50632621-8D5B-456B-8F91-58DB9D850194}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{50632621-8D5B-456B-8F91-58DB9D850194}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{50632621-8D5B-456B-8F91-58DB9D850194}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{50632621-8D5B-456B-8F91-58DB9D850194}.Release|Any CPU.Build.0 = Release|Any CPU
+		{540A1C1A-D0AA-4874-BFFA-B2AB8BB96119}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{540A1C1A-D0AA-4874-BFFA-B2AB8BB96119}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{540A1C1A-D0AA-4874-BFFA-B2AB8BB96119}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{540A1C1A-D0AA-4874-BFFA-B2AB8BB96119}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {5D41E773-D5A2-429E-9DC5-BF06C658FF89}
+	EndGlobalSection
+EndGlobal

@@ -1,41 +1,37 @@
 ﻿namespace MyNUnit;
 
-using MyNUnit.Information;
 using System.Reflection;
-using MyNUnit.Attributes;
-using System.Diagnostics;
 
 public class TestSuitElement
 {
-    private object classObject;
+    private readonly object classObject;
+    private readonly TestSuitElements.TestSuitElementType type;
+    private readonly MethodInfo methodInfo;
 
     public TestSuitElement(MethodInfo methodInfo, TestSuitElements.TestSuitElementType elementType, object classObject)
     {
-        this.Info = methodInfo;
-        this.Type = elementType;
+        this.methodInfo = methodInfo;
+        this.type = elementType;
         this.classObject = classObject;
     }
 
-    public TestSuitElements.TestSuitElementType Type { get; }
-
-    public MethodInfo Info { get; }
-
-    public TestSuitElementInfo Run()
+    public void Run()
     {
-        if (this.Type == TestSuitElements.TestSuitElementType.Before
-            || this.Type == TestSuitElements.TestSuitElementType.After)
+        try
         {
-            this.Info.Invoke(this.classObject, new object[] { });
+            if (this.type == TestSuitElements.TestSuitElementType.Before
+                || this.type == TestSuitElements.TestSuitElementType.After)
+            {
+                this.methodInfo.Invoke(this.classObject, new object[] { });
+                return;
+            }
 
-            // ...
+            this.methodInfo.Invoke(null, new object[] { });
+            return;
         }
-
-        this.Info.Invoke(null, new object[] { });
-
-        // ...
-    }
-
-    public void RunWithoutReport()
-    {
+        catch (Exception)
+        {
+            return;
+        }
     }
 }

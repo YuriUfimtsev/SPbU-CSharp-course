@@ -8,7 +8,7 @@ public class TestAttribute : Attribute
     {
     }
 
-    public TestAttribute(Exception expectedException)
+    public TestAttribute(Type expectedException)
     : this(expectedException, null)
     {
     }
@@ -18,13 +18,13 @@ public class TestAttribute : Attribute
     {
     }
 
-    public TestAttribute(Exception? expectedException, string? reasonForIgnoring)
+    public TestAttribute(Type? expectedException, string? reasonForIgnoring)
     {
         this.Expected = expectedException;
         this.Ignore = reasonForIgnoring;
     }
 
-    public Exception? Expected { get; set; }
+    public Type? Expected { get; set; }
 
     public string? Ignore { get; set; }
 }

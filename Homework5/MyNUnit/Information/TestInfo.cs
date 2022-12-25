@@ -2,6 +2,11 @@
 
 public class TestInfo
 {
+    public TestInfo(string name, TestStatus.Status executionResult)
+        : this(name, 0, executionResult, string.Empty)
+    {
+    }
+
     public TestInfo(string name, TestStatus.Status executionResult, string report)
         : this(name, 0, executionResult, report)
     {

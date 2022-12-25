@@ -7,7 +7,7 @@ using System.Diagnostics;
 
 public class Test
 {
-    private readonly Exception? expectedException;
+    private readonly Type? expectedException;
     private readonly object classObject;
     private readonly Stopwatch stopwatch;
     private readonly string reasonForIgnoring;
@@ -19,7 +19,7 @@ public class Test
         this.methodInfo = methodInfo;
         var testAttribute = this.methodInfo.GetCustomAttribute(typeof(TestAttribute));
         this.isIgnored = ((TestAttribute)testAttribute!).Ignore != null;
-        this.reasonForIgnoring = this.isIgnored ? string.Empty : ((TestAttribute)testAttribute!).Ignore!;
+        this.reasonForIgnoring = this.isIgnored ? ((TestAttribute)testAttribute!).Ignore! : string.Empty;
         this.expectedException = ((TestAttribute)testAttribute!).Expected;
         this.classObject = classObject;
         this.stopwatch = new ();
@@ -30,7 +30,7 @@ public class Test
         this.stopwatch.Reset();
         if (this.isIgnored)
         {
-            return new TestInfo(this.methodInfo.Name, TestStatus.Status.Ignored, this.reasonForIgnoring);
+            return new TestInfo(this.methodInfo.Name, TestStatus.Status.Ignored, $"Reason for ignoring: {this.reasonForIgnoring}");
         }
 
         this.stopwatch.Start();
@@ -43,8 +43,8 @@ public class Test
         catch (Exception exception)
         {
             this.stopwatch.Stop();
-            var catchedExceptionType = exception.GetType();
-            if (this.expectedException != null && this.expectedException.GetType() == catchedExceptionType)
+            var catchedExceptionType = exception.InnerException!.GetType();
+            if (this.expectedException != null && this.expectedException == catchedExceptionType)
             {
                 return new TestInfo(this.methodInfo.Name, this.stopwatch.ElapsedMilliseconds, TestStatus.Status.Passed);
             }

@@ -3,9 +3,6 @@
 [AttributeUsage(AttributeTargets.Method, Inherited = false)]
 public class TestAttribute : Attribute
 {
-    private Exception? expectedException;
-    private string? reasonForIgnoring;
-
     public TestAttribute()
         : this(null, null)
     {
@@ -23,9 +20,11 @@ public class TestAttribute : Attribute
 
     public TestAttribute(Exception? expectedException, string? reasonForIgnoring)
     {
-        this.expectedException = expectedException;
-        this.reasonForIgnoring = reasonForIgnoring;
+        this.Expected = expectedException;
+        this.Ignore = reasonForIgnoring;
     }
 
-    public bool IsIgnored => reasonForIgnoring != null;
+    public Exception? Expected { get; set; }
+
+    public string? Ignore { get; set; }
 }

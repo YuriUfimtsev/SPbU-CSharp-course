@@ -49,13 +49,13 @@ public class ClientTests
     {
         var client = new Client(8887);
         Task.Run(async () => await ServerStartMoq(8887, cancellationTokenSource.Token));
-        using var result = new MemoryStream();
-        await client.Get(pathForTestGetRequest, result);
+        using var resultStream = new MemoryStream();
+        await client.Get(pathForTestGetRequest, resultStream);
         cancellationTokenSource.Cancel();
-        var expectedResult = textFileBytes;
-        var arrayResult = result.ToArray();
-        Array.Resize(ref arrayResult, expectedResult.Length);
-        Assert.That(arrayResult, Is.EqualTo(expectedResult));
+        var expectedResult = System.Text.Encoding.Default.GetString(textFileBytes);
+        var streamReader = new StreamReader(resultStream);
+        var result = await streamReader.ReadToEndAsync();
+        Assert.That(result, Is.EqualTo(expectedResult));
     }
 
     [Test]
@@ -63,12 +63,13 @@ public class ClientTests
     {
         var client = new Client(8889);
         Task.Run(async () => await ServerStartMoq(8889, cancellationTokenSource.Token));
-        using var result = new MemoryStream();
-        await client.Get(pathForUnusualTestGetRequest, result);
+        using var resultStream = new MemoryStream();
+        await client.Get(pathForUnusualTestGetRequest, resultStream);
         cancellationTokenSource.Cancel();
-        var expectedResult = text1FileBytes;
-        var arrayResult = result.ToArray();
-        Assert.That(arrayResult, Is.EqualTo(expectedResult));
+        var expectedResult = System.Text.Encoding.Default.GetString(text1FileBytes);
+        var streamReader = new StreamReader(resultStream);
+        var result = await streamReader.ReadToEndAsync();
+        Assert.That(result, Is.EqualTo(expectedResult));
     }
 
     [Test]

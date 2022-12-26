@@ -64,10 +64,7 @@ public class Client
         var reader = new StreamReader(stream);
         try
         {
-            var data = await ReadGetRequestData(reader);
-            var outputWriter = new StreamWriter(outputStream);
-            await outputWriter.WriteAsync(data);
-            await outputWriter.FlushAsync();
+            await ReadGetRequestData(stream, outputStream);
         }
         catch (Exception exception)
         {
@@ -108,9 +105,10 @@ public class Client
         return result;
     }
 
-    private static async Task<char[]> ReadGetRequestData(StreamReader streamReader)
+    private static async Task ReadGetRequestData(Stream sourceStream, Stream outputStream)
     {
         var currentSymbol = new char[1];
+        var streamReader = new StreamReader(sourceStream);
         await streamReader.ReadAsync(currentSymbol, 0, 1);
         var data = new StringBuilder();
         while (currentSymbol[0] != ' ' && currentSymbol[0] != '\n')
@@ -125,9 +123,7 @@ public class Client
             throw new ArgumentException();
         }
 
-        var fileData = new char[dataLength];
-        await streamReader.ReadAsync(fileData, 0, fileData.Length);
-        return fileData;
+        await sourceStream.CopyToAsync(outputStream, dataLength);
     }
 
     /// <summary>

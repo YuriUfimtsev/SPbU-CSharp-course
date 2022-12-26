@@ -8,8 +8,16 @@ using MyNUnit.Attributes;
 using System.Diagnostics;
 using System.Collections.Concurrent;
 
+/// <summary>
+/// Implements running assemblies tests and providing information about them.
+/// </summary>
 public static class TestRunner
 {
+    /// <summary>
+    /// Runs the test.
+    /// </summary>
+    /// <param name="pathToSource">Path to the assemblies containts test suits.</param>
+    /// <returns>Information about running the test.</returns>
     public static List<TestClassInfo> RunTests(string pathToSource)
     {
         var testClassesInfo = new ConcurrentBag<TestClassInfo>();
@@ -65,6 +73,11 @@ public static class TestRunner
         return testClassesInfo.ToList();
     }
 
+    /// <summary>
+    /// Generates the report about the test run based on the TestClassInfo.
+    /// </summary>
+    /// <param name="testClassInformation">Information about the test run.</param>
+    /// <param name="userWriter">Destination for submitting the report.</param>
     public static void GenerateTestRunnerReport(List<TestClassInfo> testClassInformation, TextWriter userWriter)
     {
         foreach (var testClass in testClassInformation)

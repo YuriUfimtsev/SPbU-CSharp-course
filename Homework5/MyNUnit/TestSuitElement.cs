@@ -2,12 +2,21 @@
 
 using System.Reflection;
 
+/// <summary>
+/// Implements the test suit method entitie.
+/// </summary>
 public class TestSuitElement
 {
     private readonly object classObject;
     private readonly TestSuitElements.TestSuitElementType type;
     private readonly MethodInfo methodInfo;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="TestSuitElement"/> class.
+    /// </summary>
+    /// <param name="methodInfo">Method information.</param>
+    /// <param name="elementType">Type of the test suit element.</param>
+    /// <param name="classObject">Object of the class to which test method belongs.</param>
     public TestSuitElement(MethodInfo methodInfo, TestSuitElements.TestSuitElementType elementType, object classObject)
     {
         this.methodInfo = methodInfo;
@@ -15,6 +24,9 @@ public class TestSuitElement
         this.classObject = classObject;
     }
 
+    /// <summary>
+    /// Runs the test suit element.
+    /// </summary>
     public void Run()
     {
         try

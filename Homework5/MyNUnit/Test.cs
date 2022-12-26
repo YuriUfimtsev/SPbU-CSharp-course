@@ -5,6 +5,9 @@ using MyNUnit.Information;
 using MyNUnit.Attributes;
 using System.Diagnostics;
 
+/// <summary>
+/// Implements the test method entitie.
+/// </summary>
 public class Test
 {
     private readonly Type? expectedException;
@@ -14,6 +17,11 @@ public class Test
     private readonly bool isIgnored;
     private readonly MethodInfo methodInfo;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="Test"/> class.
+    /// </summary>
+    /// <param name="methodInfo">Method information.</param>
+    /// <param name="classObject">Object of the class to which test method belongs.</param>
     public Test(MethodInfo methodInfo, object classObject)
     {
         this.methodInfo = methodInfo;
@@ -25,6 +33,10 @@ public class Test
         this.stopwatch = new ();
     }
 
+    /// <summary>
+    /// Runs the test.
+    /// </summary>
+    /// <returns>Information about running the test.</returns>
     public TestInfo Run()
     {
         this.stopwatch.Reset();

@@ -5,15 +5,27 @@ using System.IO;
 using System.Net.Sockets;
 using System.Text;
 
+/// <summary>
+/// Implements network client entity.
+/// </summary>
 public class Client
 {
     private int port;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="Client"/> class.
+    /// </summary>
+    /// <param name="port">Network connection port number.</param>
     public Client(int port)
     {
         this.port = port;
     }
 
+    /// <summary>
+    /// Initiates a List request.
+    /// </summary>
+    /// <param name="path">The path to the directory where List request will be executed by the server.</param>
+    /// <returns>Collection of DirectoryElements in the requested catalog.</returns>
     public async Task<List<DirectoryElement>> List(string path)
     {
         using var tcpClient = new TcpClient();
@@ -35,6 +47,12 @@ public class Client
         }
     }
 
+    /// <summary>
+    /// Initiates a Get request.
+    /// </summary>
+    /// <param name="pathToFile">The path to the file that will be processed by the server.</param>
+    /// <param name="outputStream">The stream with file data.</param>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     public async Task Get(string pathToFile, Stream outputStream)
     {
         using var tcpClient = new TcpClient();
@@ -46,10 +64,7 @@ public class Client
         var reader = new StreamReader(stream);
         try
         {
-            var data = await ReadGetRequestData(reader);
-            var outputWriter = new StreamWriter(outputStream);
-            await outputWriter.WriteAsync(data);
-            await outputWriter.FlushAsync();
+            await ReadGetRequestData(stream, outputStream);
         }
         catch (Exception exception)
         {
@@ -90,9 +105,10 @@ public class Client
         return result;
     }
 
-    private static async Task<char[]> ReadGetRequestData(StreamReader streamReader)
+    private static async Task ReadGetRequestData(Stream sourceStream, Stream outputStream)
     {
         var currentSymbol = new char[1];
+        var streamReader = new StreamReader(sourceStream);
         await streamReader.ReadAsync(currentSymbol, 0, 1);
         var data = new StringBuilder();
         while (currentSymbol[0] != ' ' && currentSymbol[0] != '\n')
@@ -107,21 +123,33 @@ public class Client
             throw new ArgumentException();
         }
 
-        var fileData = new char[dataLength];
-        await streamReader.ReadAsync(fileData, 0, fileData.Length);
-        return fileData;
+        await sourceStream.CopyToAsync(outputStream, dataLength);
     }
 
+    /// <summary>
+    /// Implements file or catalog entity.
+    /// </summary>
     public struct DirectoryElement
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="DirectoryElement"/> struct.
+        /// </summary>
+        /// <param name="name">Catalog element name.</param>
+        /// <param name="isDirectory">Shows it is the directory or the file.</param>
         public DirectoryElement(string name, bool isDirectory)
         {
             this.Name = name;
             this.IsDirectory = isDirectory;
         }
 
+        /// <summary>
+        /// Gets the directory element name.
+        /// </summary>
         public string Name { get; }
 
+        /// <summary>
+        /// Gets a value indicating whether it is a directory.
+        /// </summary>
         public bool IsDirectory { get; }
     }
 }

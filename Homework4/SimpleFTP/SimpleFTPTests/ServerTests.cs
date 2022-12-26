@@ -1,11 +1,7 @@
-﻿using SimpleFTPClient;
-using SimpleFTPServer;
+﻿using SimpleFTPServer;
 using System.Diagnostics;
-using System.IO;
-using System.Net.Http;
 using System.Net.Sockets;
 using System.Text;
-using System.Threading;
 
 namespace SimpleFTPTests;
 
@@ -32,9 +28,10 @@ public class ServerTests
     [Test]
     public async Task StandartListResponseTest()
     {
-        var server = new Server(8111, cancellationTokenSource.Token);
+        var server = new Server(8121, cancellationTokenSource.Token);
         Task.Run(async () => await server.Start());
-        var result = await ClientMoq(8111, testListRequest);
+        var result = await ClientMoq(8121, testListRequest);
+        cancellationTokenSource.Cancel();
         Assert.That(result == testListExpectedResponse);
     }
 
@@ -59,7 +56,7 @@ public class ServerTests
     }
 
     [Test]
-    public async Task MultipleClientsTest()
+    public void MultipleClientsTest()
     {
         var server = new Server(8114, cancellationTokenSource.Token);
         Task.Run(async () => await server.Start());
@@ -78,7 +75,8 @@ public class ServerTests
 
     private static async Task<string> ClientMoq(int port, string request)
     {
-        using var tcpClient = new TcpClient("localhost", port);
+        using var tcpClient = new TcpClient();
+        await tcpClient.ConnectAsync("localhost", port);
         var stream = tcpClient.GetStream();
         var writer = new StreamWriter(stream);
         await writer.WriteAsync($"{request}\n");

@@ -4,24 +4,37 @@ using System.Net;
 using System.Net.Sockets;
 using System.Text;
 
+/// <summary>
+/// Implements network server entity.
+/// </summary>
 public class Server
 {
     private int port;
     private CancellationToken cancellationToken;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="Server"/> class.
+    /// </summary>
+    /// <param name="port">Network connection port number.</param>
+    /// <param name="cancellationToken">Server cancellatin token to suspend work.</param>
     public Server(int port, CancellationToken cancellationToken)
     {
         this.port = port;
         this.cancellationToken = cancellationToken;
     }
 
+    /// <summary>
+    /// Starts the server.
+    /// </summary>
+    /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
     public async Task Start()
     {
         var listener = new TcpListener(IPAddress.Any, this.port);
         listener.Start();
+        var serverTasks = new List<Task>();
         while (!this.cancellationToken.IsCancellationRequested)
         {
-            var socket = await listener.AcceptSocketAsync();
+            var socket = await listener.AcceptSocketAsync(this.cancellationToken);
             var task = Task.Run(async () =>
             {
                 var stream = new NetworkStream(socket);
@@ -33,7 +46,10 @@ public class Server
                 await writer.FlushAsync();
                 socket.Close();
             });
+            serverTasks.Add(task);
         }
+
+        Task.WaitAll(serverTasks.ToArray());
     }
 
     private static string GenerateResponseToList(string pathToDirectory)

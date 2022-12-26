@@ -1,6 +1,7 @@
 ﻿namespace SimpleFTPClient;
 
 using System;
+using System.IO;
 using System.Net.Sockets;
 using System.Text;
 
@@ -15,47 +16,45 @@ public class Client
 
     public async Task<List<DirectoryElement>> List(string path)
     {
-        using (var tcpClient = new TcpClient("localhost", this.port))
+        using var tcpClient = new TcpClient();
+        await tcpClient.ConnectAsync("localhost", this.port);
+        var stream = tcpClient.GetStream();
+        var writer = new StreamWriter(stream);
+        await writer.WriteAsync($"1 {path}\n");
+        await writer.FlushAsync();
+        var reader = new StreamReader(stream);
+        try
         {
-            var stream = tcpClient.GetStream();
-            var writer = new StreamWriter(stream);
-            await writer.WriteAsync($"1 {path}\n");
-            await writer.FlushAsync();
-            var reader = new StreamReader(stream);
-            try
-            {
-                var data = await ReadListRequestData(reader);
-                return data;
-            }
-            catch (Exception exception)
-            {
-                throw Equals(exception, typeof(ArgumentException)) ?
-                    new InvalidPathException() : new InvalidServerResponseException();
-            }
+            var data = await ReadListRequestData(reader);
+            return data;
+        }
+        catch (Exception exception)
+        {
+            throw Equals(exception.GetType(), typeof(ArgumentException)) ?
+                new InvalidPathException() : new InvalidServerResponseException();
         }
     }
 
     public async Task Get(string pathToFile, Stream outputStream)
     {
-        using (var tcpClient = new TcpClient("localhost", this.port))
+        using var tcpClient = new TcpClient();
+        await tcpClient.ConnectAsync("localhost", this.port);
+        var stream = tcpClient.GetStream();
+        var writer = new StreamWriter(stream);
+        await writer.WriteAsync($"2 {pathToFile}\n");
+        await writer.FlushAsync();
+        var reader = new StreamReader(stream);
+        try
         {
-            var stream = tcpClient.GetStream();
-            var writer = new StreamWriter(stream);
-            await writer.WriteAsync($"2 {pathToFile}\n");
-            await writer.FlushAsync();
-            var reader = new StreamReader(stream);
-            try
-            {
-                var data = await ReadGetRequestData(reader);
-                var outputWriter = new StreamWriter(outputStream);
-                await outputWriter.WriteAsync(data);
-                await outputWriter.FlushAsync();
-            }
-            catch (Exception exception)
-            {
-                throw Equals(exception, typeof(ArgumentException)) ?
-                    new InvalidPathException() : new InvalidServerResponseException();
-            }
+            var data = await ReadGetRequestData(reader);
+            var outputWriter = new StreamWriter(outputStream);
+            await outputWriter.WriteAsync(data);
+            await outputWriter.FlushAsync();
+        }
+        catch (Exception exception)
+        {
+            throw Equals(exception.GetType(), typeof(ArgumentException)) ?
+                new InvalidPathException() : new InvalidServerResponseException();
         }
     }
 
@@ -76,7 +75,7 @@ public class Client
             throw new ArgumentException();
         }
 
-        for (var i = 1; i < dataLength; i += 2)
+        for (var i = 1; i < dataLength * 2; i += 2)
         {
             var boolValue = dataArray[i + 1] switch
             {

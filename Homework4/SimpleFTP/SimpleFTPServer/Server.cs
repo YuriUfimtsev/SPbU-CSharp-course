@@ -15,6 +15,27 @@ public class Server
         this.cancellationToken = cancellationToken;
     }
 
+    public async Task Start()
+    {
+        var listener = new TcpListener(IPAddress.Any, this.port);
+        listener.Start();
+        while (!this.cancellationToken.IsCancellationRequested)
+        {
+            var socket = await listener.AcceptSocketAsync();
+            var task = Task.Run(async () =>
+            {
+                var stream = new NetworkStream(socket);
+                var reader = new StreamReader(stream);
+                var data = await reader.ReadLineAsync();
+                var response = data == null ? "-1\n" : GenerateResponse(data);
+                var writer = new StreamWriter(stream);
+                await writer.WriteAsync(response);
+                await writer.FlushAsync();
+                socket.Close();
+            });
+        }
+    }
+
     private static string GenerateResponseToList(string pathToDirectory)
     {
         var response = new StringBuilder();
@@ -73,7 +94,7 @@ public class Server
         }
     }
 
-    public static string GenerateResponse(string requestData)
+    private static string GenerateResponse(string requestData)
     {
         var result = requestData[0] switch
         {
@@ -83,26 +104,5 @@ public class Server
         };
 
         return result;
-    }
-
-    public async Task Start()
-    {
-        var listener = new TcpListener(IPAddress.Any, this.port);
-        listener.Start();
-        while (!this.cancellationToken.IsCancellationRequested)
-        {
-            var socket = await listener.AcceptSocketAsync();
-            var task = Task.Run(async () =>
-            {
-                var stream = new NetworkStream(socket);
-                var reader = new StreamReader(stream);
-                var data = await reader.ReadLineAsync();
-                var response = data == null ? "-1\n" : GenerateResponse(data);
-                var writer = new StreamWriter(stream);
-                await writer.WriteAsync(response);
-                await writer.FlushAsync();
-                socket.Close();
-            });
-        }
     }
 }

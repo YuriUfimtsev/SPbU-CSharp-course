@@ -7,7 +7,7 @@ public class Program
         const int port = 8888;
         if (args.Length == 0 || args.Length > 2)
         {
-            Console.WriteLine( Directory.GetCurrentDirectory() +"Incorrect arguments");
+            Console.WriteLine(Directory.GetCurrentDirectory() + "Incorrect arguments");
             return;
         }
 

@@ -1,2 +1,0 @@
-SomeMoreText SomeMoreText SomeMoreText.
-Some more text;

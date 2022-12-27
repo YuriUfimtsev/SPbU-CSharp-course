@@ -11,15 +11,13 @@ void SaveResultsInTable(
     (double MathematicalExpectation,
     double StandardDeviation)[] parallelMatrixMultiplicationEvaluation)
 {
-    using (StreamWriter fileStream = new(fileName))
-    {
-        var lineForFile = "Matrices sizes: 500*1300x1300*500  1000*1300x1300*1000 1500*1300x1300*1500";
-        fileStream.WriteLine(lineForFile);
-        var mutableLineForFile = WriteMathematicalExpectationAndStandardDeviationInFile(coherentMatrixMultiplicationEvaluation, true);
-        fileStream.WriteLine(mutableLineForFile);
-        mutableLineForFile = WriteMathematicalExpectationAndStandardDeviationInFile(parallelMatrixMultiplicationEvaluation, false);
-        fileStream.WriteLine(mutableLineForFile);
-    }
+    using StreamWriter fileStream = new(fileName);
+    var lineForFile = "Matrices sizes: 500*1300x1300*500  1000*1300x1300*1000 1500*1300x1300*1500";
+    fileStream.WriteLine(lineForFile);
+    var mutableLineForFile = WriteMathematicalExpectationAndStandardDeviationInFile(coherentMatrixMultiplicationEvaluation, true);
+    fileStream.WriteLine(mutableLineForFile);
+    mutableLineForFile = WriteMathematicalExpectationAndStandardDeviationInFile(parallelMatrixMultiplicationEvaluation, false);
+    fileStream.WriteLine(mutableLineForFile);
 }
 
 StringBuilder WriteMathematicalExpectationAndStandardDeviationInFile(
@@ -52,16 +50,16 @@ StringBuilder WriteMathematicalExpectationAndStandardDeviationInFile(
             var secondMultiplier = new Matrix($"../../../Data{i + 1}_secondMultiplier.txt");
             stopwatch.Start();
             var multiplicationResult = isCoherentMultiplication
-                ? firstMultiplier.CoherentMultiplyMatrices(secondMultiplier)
+                ? firstMultiplier.ConsistentMultiplyMatrices(secondMultiplier)
                 : firstMultiplier.ParallelMultiplyMatrices(secondMultiplier);
             stopwatch.Stop();
             double time = Convert.ToDouble(stopwatch.Elapsed.Milliseconds);
             randomVariableValues[j] = time;
         }
 
-        var evaluation = new Evaluation(randomVariableValues, Convert.ToDouble(1 / N));
         matrixMultiplicationEvaluation[i]
-            = (evaluation.EvaluateMathematicalExpectation(), evaluation.EvaluateStandardDeviation());
+            = (Evaluation.EvaluateMathematicalExpectation(randomVariableValues, Convert.ToDouble(1 / N)),
+            Evaluation.EvaluateStandardDeviation(randomVariableValues, Convert.ToDouble(1 / N)));
     }
 
     return matrixMultiplicationEvaluation;

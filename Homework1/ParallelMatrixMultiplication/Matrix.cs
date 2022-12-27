@@ -10,11 +10,13 @@ using System.Text;
 /// </summary>
 public class Matrix
 {
+    private static Random random = new();
+
     /// <summary>
     /// Initializes a new instance of the <see cref="Matrix"/> class.
     /// </summary>
-    /// <param name="size">tuple of the number of rows and columns of the matrix.</param>
     /// <param name="matrixElement">matrix as an array of arrays.</param>
+    /// <param name="size">tuple of the number of rows and columns of the matrix.</param>
     /// <exception cref="InvalidDataException">throws this exception if at least one row or column
     /// doesn't match to size data.</exception>
     public Matrix((int Rows, int Columns) size, int[][] matrixElement)
@@ -44,29 +46,27 @@ public class Matrix
     public Matrix(string fileName)
     {
         var rows = new List<int[]>();
-        using (StreamReader fileStreamForCountMatrixSize = new(fileName))
+        using StreamReader fileStreamForCountMatrixSize = new(fileName);
+        var line = string.Empty;
+        var columnsCount = 0;
+        var rowsCount = 0;
+        while ((line = fileStreamForCountMatrixSize.ReadLine()) != null)
         {
-            var line = string.Empty;
-            var columnsCount = 0;
-            var rowsCount = 0;
-            while ((line = fileStreamForCountMatrixSize.ReadLine()) != null)
+            try
             {
-                try
-                {
-                    int[] stringNumbers = line.Split().Select(int.Parse).ToArray();
-                    if (columnsCount > 0 && columnsCount != stringNumbers.Length)
-                    {
-                        throw new InvalidDataException("Incorrect matrix");
-                    }
-
-                    columnsCount = stringNumbers.Length;
-                    ++rowsCount;
-                    rows.Add(stringNumbers);
-                }
-                catch (System.FormatException)
+                int[] stringNumbers = line.Split().Select(int.Parse).ToArray();
+                if (columnsCount > 0 && columnsCount != stringNumbers.Length)
                 {
                     throw new InvalidDataException("Incorrect matrix");
                 }
+
+                columnsCount = stringNumbers.Length;
+                ++rowsCount;
+                rows.Add(stringNumbers);
+            }
+            catch (System.FormatException)
+            {
+                throw new InvalidDataException("Incorrect matrix");
             }
 
             this.Size = (rowsCount, columnsCount);
@@ -93,7 +93,6 @@ public class Matrix
     /// <returns>Matrix object.</returns>
     public static Matrix CreateRandomMatrix(int rows, int columns)
     {
-        var random = new Random();
         var randomMatrix = new int[rows][];
         for (var i = 0; i < rows; ++i)
         {
@@ -104,8 +103,7 @@ public class Matrix
             }
         }
 
-        var matrix = new Matrix((rows, columns), randomMatrix);
-        return matrix;
+        return new Matrix((rows, columns), randomMatrix);
     }
 
     /// <summary>
@@ -125,10 +123,7 @@ public class Matrix
         var availableThreads = Environment.ProcessorCount;
         var rowsPerThreadCount = (resultMatrixRowsNumber / availableThreads) + 1;
 
-        var threads = new Thread[rowsPerThreadCount == 0 ?
-            resultMatrixRowsNumber % availableThreads : availableThreads];
-
-        rowsPerThreadCount = rowsPerThreadCount == 0 ? 1 : rowsPerThreadCount;
+        var threads = new Thread[availableThreads];
 
         for (var i = 0; i < threads.Length; ++i)
         {
@@ -136,7 +131,7 @@ public class Matrix
             threads[i] = new Thread(() =>
             {
                 for (var j = locali * rowsPerThreadCount;
-                j < (locali + 1) * rowsPerThreadCount && j < resultMatrixRowsNumber; ++j)
+                    j < (locali + 1) * rowsPerThreadCount && j < resultMatrixRowsNumber; ++j)
                 {
                     var resultRow = new int[resultMatrixColumnsNumber];
                     for (var k = 0; k < resultMatrixColumnsNumber; ++k)
@@ -174,7 +169,7 @@ public class Matrix
     /// </summary>
     /// <param name="secondMatrixForMultiplication">second argument for multiplication.</param>
     /// <returns>multiplication result, Matrix object.</returns>
-    public Matrix CoherentMultiplyMatrices(Matrix secondMatrixForMultiplication)
+    public Matrix ConsistentMultiplyMatrices(Matrix secondMatrixForMultiplication)
     {
         this.CheckDimensionsOfMatrices(secondMatrixForMultiplication);
         var numberOfScalarProductMultiplications = this.Size.Columns;
@@ -209,22 +204,20 @@ public class Matrix
     /// <param name="fileName">file to which the matrix should be written.</param>
     public void SaveToFile(string fileName)
     {
-        using (StreamWriter fileStream = new(fileName))
+        using StreamWriter fileStream = new(fileName);
+        for (var i = 0; i < this.Size.Rows; ++i)
         {
-            for (var i = 0; i < this.Size.Rows; ++i)
+            var lineForFile = new StringBuilder();
+            for (var j = 0; j < this.Size.Columns; ++j)
             {
-                var lineForFile = new StringBuilder();
-                for (var j = 0; j < this.Size.Columns; ++j)
+                lineForFile.Append(this.TheMatrix[i][j]);
+                if (j != this.Size.Columns - 1)
                 {
-                    lineForFile.Append(this.TheMatrix[i][j]);
-                    if (j != this.Size.Columns - 1)
-                    {
-                        lineForFile.Append(' ');
-                    }
+                    lineForFile.Append(' ');
                 }
-
-                fileStream.WriteLine(lineForFile);
             }
+
+            fileStream.WriteLine(lineForFile);
         }
     }
 

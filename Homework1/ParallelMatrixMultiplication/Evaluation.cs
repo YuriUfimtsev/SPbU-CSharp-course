@@ -5,64 +5,48 @@ using System;
 /// <summary>
 /// Evaluates such values as mathematical expectation, variance of a random variable, standard deviation.
 /// </summary>
-public class Evaluation
+public static class Evaluation
 {
-    /// <summary>
-    /// Initializes a new instance of the <see cref="Evaluation"/> class.
-    /// </summary>
-    /// <param name="randomVariableValues">array of random variable values.</param>
-    /// <param name="randomVariableValuesProbability">probability for each random variable value.</param>
-    public Evaluation(double[] randomVariableValues, double randomVariableValuesProbability)
-    {
-        if (randomVariableValuesProbability == 0)
-        {
-            throw new ArgumentException("Incorrect probability for evaluating");
-        }
-
-        this.RandomVariableValues = randomVariableValues;
-        this.RandomVariableValuesProbability = randomVariableValuesProbability;
-    }
-
-    /// <summary>
-    /// Gets array of random variable values.
-    /// </summary>
-    public double[] RandomVariableValues { get; }
-
-    /// <summary>
-    /// Gets probability for each random variable value.
-    /// </summary>
-    public double RandomVariableValuesProbability { get; }
-
     /// <summary>
     /// Evaluates mathematical expectation of a random variable.
     /// </summary>
-    /// <returns>mathematical expectation.</returns>
-    public double EvaluateMathematicalExpectation()
+    /// <param name="randomVariableValues">Array of random variable values.</param>
+    /// <param name="randomVariableValuesProbability">Probability for each random variable value.</param>
+    /// <returns>Mathematical expectation.</returns>
+    public static double EvaluateMathematicalExpectation(
+        double[] randomVariableValues,
+        double randomVariableValuesProbability)
     {
         double mathematicalExpectation = 0;
-        for (var i = 0; i < this.RandomVariableValues.Length; ++i)
+        for (var i = 0; i < randomVariableValues.Length; ++i)
         {
-            mathematicalExpectation += this.RandomVariableValues[i];
+            mathematicalExpectation += randomVariableValues[i];
         }
 
-        mathematicalExpectation *= this.RandomVariableValuesProbability;
+        mathematicalExpectation *= randomVariableValuesProbability;
         return mathematicalExpectation;
     }
 
     /// <summary>
     /// Evaluates variance of a random variable.
     /// </summary>
-    /// <returns>variance.</returns>
-    public double EvaluateVariance()
+    /// <param name="randomVariableValues">Array of random variable values.</param>
+    /// <param name="randomVariableValuesProbability">Probability for each random variable value.</param>
+    /// <returns>Variance.</returns>
+    public static double EvaluateVariance(
+        double[] randomVariableValues,
+        double randomVariableValuesProbability)
     {
-        var mathematicalExpectation = this.EvaluateMathematicalExpectation();
+        var mathematicalExpectation = EvaluateMathematicalExpectation(
+            randomVariableValues,
+            randomVariableValuesProbability);
         double mathematicalExpectationWithSquaredRandomVariable = 0;
-        for (var i = 0; i < this.RandomVariableValues.Length; ++i)
+        for (var i = 0; i < randomVariableValues.Length; ++i)
         {
-            mathematicalExpectationWithSquaredRandomVariable += Math.Pow(this.RandomVariableValues[i], 2);
+            mathematicalExpectationWithSquaredRandomVariable += Math.Pow(randomVariableValues[i], 2);
         }
 
-        mathematicalExpectationWithSquaredRandomVariable *= this.RandomVariableValuesProbability;
+        mathematicalExpectationWithSquaredRandomVariable *= randomVariableValuesProbability;
 
         double mathematicalExpectationSquared = Math.Pow(mathematicalExpectation, 2);
         var variance = mathematicalExpectationWithSquaredRandomVariable - mathematicalExpectationSquared;
@@ -72,7 +56,15 @@ public class Evaluation
     /// <summary>
     /// Evaluates standard deviation of a random variable.
     /// </summary>
-    /// <returns>standard deviation.</returns>
-    public double EvaluateStandardDeviation()
-        => Math.Round(Math.Sqrt(this.EvaluateVariance()), 2);
+    /// <param name="randomVariableValues">Array of random variable values.</param>
+    /// <param name="randomVariableValuesProbability">Probability for each random variable value.</param>
+    /// <returns>Standard deviation.</returns>
+    public static double EvaluateStandardDeviation(
+        double[] randomVariableValues,
+        double randomVariableValuesProbability)
+        => Math.Round(
+            Math.Sqrt(EvaluateVariance(
+            randomVariableValues,
+            randomVariableValuesProbability)),
+            2);
 }

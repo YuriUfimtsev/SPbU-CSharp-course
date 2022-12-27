@@ -49,7 +49,7 @@ public class Server
             serverTasks.Add(task);
         }
 
-        Task.WaitAll(serverTasks.ToArray());
+        await Task.WhenAll(serverTasks.ToArray());
     }
 
     private static string GenerateResponseToList(string pathToDirectory)

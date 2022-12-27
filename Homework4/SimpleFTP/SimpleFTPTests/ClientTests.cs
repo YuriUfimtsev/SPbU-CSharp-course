@@ -55,7 +55,7 @@ public class ClientTests
         var expectedResult = System.Text.Encoding.Default.GetString(textFileBytes);
         var streamReader = new StreamReader(resultStream);
         var result = await streamReader.ReadToEndAsync();
-        Assert.That(result, Is.EqualTo(expectedResult));
+        Assert.That(result == expectedResult);
     }
 
     [Test]
@@ -65,10 +65,11 @@ public class ClientTests
         Task.Run(async () => await ServerStartMoq(8889, cancellationTokenSource.Token));
         using var resultStream = new MemoryStream();
         await client.Get(pathForUnusualTestGetRequest, resultStream);
-        cancellationTokenSource.Cancel();
+        resultStream.Position = 0;
         var expectedResult = System.Text.Encoding.Default.GetString(text1FileBytes);
         var streamReader = new StreamReader(resultStream);
         var result = await streamReader.ReadToEndAsync();
+        cancellationTokenSource.Cancel();
         Assert.That(result, Is.EqualTo(expectedResult));
     }
 

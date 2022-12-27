@@ -11,14 +11,21 @@ using System.Text;
 public class Client
 {
     private int port;
+    private string host;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="Client"/> class.
     /// </summary>
     /// <param name="port">Network connection port number.</param>
     public Client(int port)
+        : this(port, "localhost")
+    {
+    }
+
+    public Client(int port, string host)
     {
         this.port = port;
+        this.host = host;
     }
 
     /// <summary>
@@ -29,7 +36,7 @@ public class Client
     public async Task<List<DirectoryElement>> List(string path)
     {
         using var tcpClient = new TcpClient();
-        await tcpClient.ConnectAsync("localhost", this.port);
+        await tcpClient.ConnectAsync(this.host, this.port);
         var stream = tcpClient.GetStream();
         var writer = new StreamWriter(stream);
         await writer.WriteAsync($"1 {path}\n");
@@ -65,6 +72,7 @@ public class Client
         try
         {
             await ReadGetRequestData(stream, outputStream);
+            outputStream.Position = 0;
         }
         catch (Exception exception)
         {
@@ -123,7 +131,25 @@ public class Client
             throw new ArgumentException();
         }
 
-        await sourceStream.CopyToAsync(outputStream, dataLength);
+        var streamWriter = new StreamWriter(outputStream);
+        while (!streamReader.EndOfStream)
+        {
+            var buffer = new char[8];
+            if (outputStream.Position + 8 > dataLength)
+            {
+                var bytesRead = await streamReader.ReadAsync(buffer, 0, dataLength - (int)outputStream.Position);
+                streamWriter.Write(buffer, 0, bytesRead);
+                streamWriter.Flush();
+                return;
+            }
+            else
+            {
+                var bytesRead = await streamReader.ReadAsync(buffer, 0, buffer.Length);
+                streamWriter.Write(buffer, 0, bytesRead);
+            }
+
+            streamWriter.Flush();
+        }
     }
 
     /// <summary>

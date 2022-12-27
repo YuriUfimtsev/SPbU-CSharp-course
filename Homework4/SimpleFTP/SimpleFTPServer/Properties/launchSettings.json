@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "SimpleFTPServer": {
+      "commandName": "Project",
+      "workingDirectory": "./"
+    }
+  }
+}

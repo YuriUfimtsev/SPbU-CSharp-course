@@ -14,9 +14,10 @@ public class MyThreadPool
     private ConcurrentQueue<Action> tasksQueue;
     private MyThread[] myThreadArray;
     private CancellationTokenSource cancellationTokenSource;
-    private AutoResetEvent autoResetEventForCorrectWaitingForTasks;
-    private ManualResetEvent manualResetEventForCorrectWaitingForTasks;
+    private AutoResetEvent newTaskEvent;
+    private ManualResetEvent HasTasksInQueueEvent;
     private WaitHandle[] resetEventsArrayForCorrectWaitingForTasks;
+    private object lockObject;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="MyThreadPool"/> class.
@@ -38,12 +39,12 @@ public class MyThreadPool
         this.tasksQueue = new ConcurrentQueue<Action>();
         this.myThreadArray = new MyThread[threadCount];
         this.cancellationTokenSource = new CancellationTokenSource();
-        this.autoResetEventForCorrectWaitingForTasks = new AutoResetEvent(false);
-        this.manualResetEventForCorrectWaitingForTasks = new ManualResetEvent(false);
+        this.newTaskEvent = new AutoResetEvent(false);
+        this.HasTasksInQueueEvent = new ManualResetEvent(false);
         this.resetEventsArrayForCorrectWaitingForTasks = new WaitHandle[2]
         {
-            this.autoResetEventForCorrectWaitingForTasks,
-            this.manualResetEventForCorrectWaitingForTasks,
+            this.newTaskEvent,
+            this.HasTasksInQueueEvent,
         };
         for (var i = 0; i < threadCount; ++i)
         {
@@ -51,6 +52,7 @@ public class MyThreadPool
         }
 
         this.millisecondsTimeoutForTaskInJoiningThread = maxDelayTimeForThreadPoolShutdown / threadCount;
+        this.lockObject = new object();
     }
 
     /// <summary>
@@ -77,7 +79,7 @@ public class MyThreadPool
     /// <returns>Task.</returns>
     public IMyTask<TResult> Submit<TResult>(Func<TResult> function, ManualResetEvent? parentalTaskResetEvent = null)
     {
-        lock (this)
+        lock (this.lockObject)
         {
             if (this.cancellationTokenSource.IsCancellationRequested)
             {
@@ -91,7 +93,7 @@ public class MyThreadPool
                 this.tasksQueue.Enqueue(() => myTask.Compute());
             }
 
-            this.autoResetEventForCorrectWaitingForTasks.Set();
+            this.newTaskEvent.Set();
             return myTask;
         }
     }
@@ -102,10 +104,10 @@ public class MyThreadPool
     /// <exception cref="EndlessFunctionException">Throws if the function hasn't been finished for definite time.</exception>
     public void ShutDown()
     {
-        lock (this)
+        lock (this.lockObject)
         {
             this.cancellationTokenSource.Cancel();
-            this.manualResetEventForCorrectWaitingForTasks.Set();
+            this.HasTasksInQueueEvent.Set();
             for (var i = 0; i < this.myThreadArray.Length; ++i)
             {
                 this.myThreadArray[i].ThreadJoin(this.millisecondsTimeoutForTaskInJoiningThread);
@@ -146,6 +148,18 @@ public class MyThreadPool
                     break;
                 }
 
+                lock (this.myThreadPool.tasksQueue)
+                {
+                    if (this.myThreadPool.tasksQueue.Count > 0)
+                    {
+                        this.myThreadPool.HasTasksInQueueEvent.Set();
+                    }
+                    else
+                    {
+                        this.myThreadPool.HasTasksInQueueEvent.Reset();
+                    }
+                }
+
                 if (!this.myThreadPool.tasksQueue.IsEmpty)
                 {
                     var isSuccessful = this.myThreadPool.tasksQueue.TryDequeue(out this.taskForComputing);
@@ -162,11 +176,11 @@ public class MyThreadPool
                 {
                     if (this.myThreadPool.tasksQueue.Count > 0)
                     {
-                        this.myThreadPool.manualResetEventForCorrectWaitingForTasks.Set();
+                        this.myThreadPool.HasTasksInQueueEvent.Set();
                     }
                     else
                     {
-                        this.myThreadPool.manualResetEventForCorrectWaitingForTasks.Reset();
+                        this.myThreadPool.HasTasksInQueueEvent.Reset();
                     }
                 }
             }
@@ -257,21 +271,20 @@ public class MyThreadPool
         /// <returns>Task with new return value type of the function.</returns>
         public IMyTask<TNewResult> ContinueWith<TNewResult>(Func<TResult, TNewResult> func)
         {
-            if (this.result != null)
-            {
-                return this.myThreadPool.Submit(() => func(this.Result), this.continuationResetEvent);
-            }
-
-            var continuationTask = new MyTask<TNewResult>(
-                () => func(this.Result),
-                this.myThreadPool,
-                this.continuationResetEvent);
             lock (this.continuationTaskActions)
             {
-                this.continuationTaskActions.Add(() => continuationTask.Compute());
-            }
+                if (this.result != null)
+                {
+                    return this.myThreadPool.Submit(() => func(this.Result), this.continuationResetEvent);
+                }
 
-            return continuationTask;
+                var continuationTask = new MyTask<TNewResult>(
+                    () => func(this.Result),
+                    this.myThreadPool,
+                    this.continuationResetEvent);
+                this.continuationTaskActions.Add(() => continuationTask.Compute());
+                return continuationTask;
+            }
         }
 
         /// <summary>
@@ -281,6 +294,13 @@ public class MyThreadPool
         {
             try
             {
+                if (this.isContinuation)
+                {
+                    this.parentalContinuationResetEvent!.WaitOne();
+                }
+
+                this.result = this.function();
+
                 lock (this.continuationTaskActions)
                 {
                     if (this.continuationTaskActions.Count > 0)
@@ -291,13 +311,6 @@ public class MyThreadPool
                         }
                     }
                 }
-
-                if (this.isContinuation)
-                {
-                    this.parentalContinuationResetEvent!.WaitOne();
-                }
-
-                this.result = this.function();
             }
             catch (Exception ex)
             {

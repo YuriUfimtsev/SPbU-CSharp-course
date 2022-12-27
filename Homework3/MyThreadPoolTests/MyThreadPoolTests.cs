@@ -305,7 +305,7 @@ public class MyThreadPoolTests
     }
 
     [Test]
-    public async Task ConcurrentlySumbitAndShutdown()
+    public async Task ConcurrentlySubmitAndShutdown()
     {
         var result = 0;
         var shutDownTask = Task.Run(() =>
@@ -327,7 +327,7 @@ public class MyThreadPoolTests
         try
         {
             manualResetEvent.Set();
-            result = submitTask.Result.Result;
+            result = (await submitTask).Result;
         }
         catch (AggregateException exception)
         {

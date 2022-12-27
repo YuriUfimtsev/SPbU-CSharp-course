@@ -5,18 +5,19 @@ using Lazy;
 public class MultiThreadedLazyTests
 {
     private static int testIterationsNumber = 1000;
-    private static ManualResetEvent testIterationStarted = new ManualResetEvent(false);
+    private static ManualResetEvent testIterationStarted = new (false);
 
     [Test]
     public void MultiThreadedTest()
     {
         var random = new Random();
-        var threads = new Thread[Environment.ProcessorCount];
+        var threads = new Thread[10];
         var threadsCalculationResult = new int[threads.Length];
+        var counter = 0;
         for (var k = 0; k < testIterationsNumber; ++k)
         {
             testIterationStarted.Reset();
-            var lazyObject = new MultiThreadedLazy<int>(() => random.Next(1000));
+            var lazyObject = new MultiThreadedLazy<int>(() => Interlocked.Increment(ref counter));
 
             for (var i = 0; i < threads.Length; ++i)
             {

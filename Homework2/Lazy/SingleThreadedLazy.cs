@@ -8,7 +8,7 @@ public class SingleThreadedLazy<T> : ILazy<T>
 {
     private readonly Func<T> supplier;
     private T? result;
-    private int supplier1;
+    private bool isResultReady;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="SingleThreadedLazy{T}"/> class.
@@ -17,17 +17,19 @@ public class SingleThreadedLazy<T> : ILazy<T>
     public SingleThreadedLazy(Func<T> supplier)
     {
         this.supplier = supplier;
+        this.isResultReady = false;
     }
 
     /// <summary>
     /// Сalculates the result only on the first call. Then returns it.
     /// </summary>
     /// <returns> Result of the lazy object function.</returns>
-    public T Get()
+    public T? Get()
     {
-        if (this.result == null)
+        if (!this.isResultReady)
         {
             this.result = this.supplier();
+            this.isResultReady = true;
         }
 
         return this.result;

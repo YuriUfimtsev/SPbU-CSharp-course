@@ -32,8 +32,8 @@ public class ServerTests
         Task.Run(async () => await server.Start());
         var result = await ClientMoq(8121, testListRequest);
         cancellationTokenSource.Cancel();
-        var newResult = result.Replace("\\", "/");
-        Assert.That(newResult == testListExpectedResponse);
+        //var newResult = result.Replace("\\", "/");
+        Assert.That(result == testListExpectedResponse);
     }
 
     [Test]

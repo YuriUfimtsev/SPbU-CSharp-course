@@ -45,20 +45,6 @@ public class ClientTests
     }
 
     [Test]
-    public async Task StandartGetRequestTest()
-    {
-        var client = new Client(8887);
-        Task.Run(async () => await ServerStartMoq(8887, cancellationTokenSource.Token));
-        using var resultStream = new MemoryStream();
-        await client.Get(pathForTestGetRequest, resultStream);
-        cancellationTokenSource.Cancel();
-        var expectedResult = System.Text.Encoding.Default.GetString(textFileBytes);
-        var streamReader = new StreamReader(resultStream);
-        var result = await streamReader.ReadToEndAsync();
-        Assert.That(result == expectedResult);
-    }
-
-    [Test]
     public async Task GetRequestTestWithEndOfLineCharacterInTheMiddle()
     {
         var client = new Client(8889);

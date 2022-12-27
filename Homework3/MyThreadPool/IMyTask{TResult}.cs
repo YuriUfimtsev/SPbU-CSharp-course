@@ -1,9 +1,6 @@
 ﻿namespace MyThreadPool;
 
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 
 /// <summary>
 /// Interface of a task abstraction.

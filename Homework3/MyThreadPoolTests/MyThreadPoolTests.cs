@@ -1,4 +1,5 @@
 using MyThreadPool;
+using System.Runtime.CompilerServices;
 
 namespace MyThreadPoolTests;
 
@@ -121,7 +122,7 @@ public class MyThreadPoolTests
     [Test]
     public void CorrectShutdownWorkTest()
     {
-        var taskArray = new IMyTask<string>[this.threadsInMyThreadPoolCount+ 2];
+        var taskArray = new IMyTask<string>[this.threadsInMyThreadPoolCount + 2];
         for (var i = 0; i < this.threadsInMyThreadPoolCount + 2; ++i)
         {
             var locali = i;
@@ -263,7 +264,7 @@ public class MyThreadPoolTests
             this.manualResetEvent.WaitOne();
             return 0;
         });
-        
+
         var continuationTask = task.ContinueWith(x => x - 1);
         this.manualResetEvent.Set();
         Assert.That(continuationTask.Result, Is.EqualTo(-1));
@@ -301,6 +302,40 @@ public class MyThreadPoolTests
                 Assert.Throws<ShutdownRequestedException>(() => { var result = taskArray[j].Result; });
             }
         }
+    }
+
+    [Test]
+    public async Task ConcurrentlySumbitAndShutdown()
+    {
+        var result = 0;
+        var shutDownTask = Task.Run(() =>
+        {
+            manualResetEvent.WaitOne();
+            myThreadPool.ShutDown();
+        });
+
+        var submitTask = Task.Run(() =>
+        {
+            manualResetEvent.WaitOne();
+            var myTask = myThreadPool.Submit(() =>
+            {
+                return CalculateArithmeticProgression(100);
+            });
+            return myTask;
+        });
+
+        try
+        {
+            manualResetEvent.Set();
+            result = submitTask.Result.Result;
+        }
+        catch (AggregateException exception)
+        {
+            Assert.That(exception.InnerExceptions[0].GetType(), Is.EqualTo(typeof(InvalidOperationException)));
+            Assert.Pass();
+        }
+
+        Assert.That(result, Is.EqualTo(4949));
     }
 
     private static int CalculateArithmeticProgression(int lastMember)

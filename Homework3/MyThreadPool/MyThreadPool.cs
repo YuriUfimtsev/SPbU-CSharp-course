@@ -3,9 +3,6 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
-using System.Linq;
-using System.Runtime.CompilerServices;
-using System.Text;
 using System.Threading;
 
 /// <summary>
@@ -17,9 +14,9 @@ public class MyThreadPool
     private ConcurrentQueue<Action> tasksQueue;
     private MyThread[] myThreadArray;
     private CancellationTokenSource cancellationTokenSource;
-    private AutoResetEvent autoResetEvent;
-    private ManualResetEvent manualResetEvent;
-    private WaitHandle[] resetEventsArray;
+    private AutoResetEvent autoResetEventForCorrectWaitingForTasks;
+    private ManualResetEvent manualResetEventForCorrectWaitingForTasks;
+    private WaitHandle[] resetEventsArrayForCorrectWaitingForTasks;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="MyThreadPool"/> class.
@@ -41,9 +38,13 @@ public class MyThreadPool
         this.tasksQueue = new ConcurrentQueue<Action>();
         this.myThreadArray = new MyThread[threadCount];
         this.cancellationTokenSource = new CancellationTokenSource();
-        this.autoResetEvent = new AutoResetEvent(false);
-        this.manualResetEvent = new ManualResetEvent(false);
-        this.resetEventsArray = new WaitHandle[2] { this.autoResetEvent, this.manualResetEvent };
+        this.autoResetEventForCorrectWaitingForTasks = new AutoResetEvent(false);
+        this.manualResetEventForCorrectWaitingForTasks = new ManualResetEvent(false);
+        this.resetEventsArrayForCorrectWaitingForTasks = new WaitHandle[2]
+        {
+            this.autoResetEventForCorrectWaitingForTasks,
+            this.manualResetEventForCorrectWaitingForTasks,
+        };
         for (var i = 0; i < threadCount; ++i)
         {
             this.myThreadArray[i] = new MyThread(this, this.cancellationTokenSource.Token);
@@ -65,13 +66,7 @@ public class MyThreadPool
     /// <summary>
     /// Gets a value indicating whether all tasks given to the ThreadPool are being computed.
     /// </summary>
-    public bool AreAllTasksInProgress
-    {
-        get
-        {
-            return this.tasksQueue.Count == 0;
-        }
-    }
+    public bool AreAllTasksInProgress => this.tasksQueue.Count == 0;
 
     /// <summary>
     /// Submits new task to the ThreadPool.
@@ -82,11 +77,23 @@ public class MyThreadPool
     /// <returns>Task.</returns>
     public IMyTask<TResult> Submit<TResult>(Func<TResult> function, ManualResetEvent? parentalTaskResetEvent = null)
     {
-        var myTask = parentalTaskResetEvent == null ? new MyTask<TResult>(function, this)
-            : new MyTask<TResult>(function, this, parentalTaskResetEvent);
-        this.tasksQueue.Enqueue(() => myTask.Compute());
-        this.autoResetEvent.Set();
-        return myTask;
+        lock (this)
+        {
+            if (this.cancellationTokenSource.IsCancellationRequested)
+            {
+                throw new InvalidOperationException("Shutdown was previously requested");
+            }
+
+            var myTask = parentalTaskResetEvent == null ? new MyTask<TResult>(function, this)
+                : new MyTask<TResult>(function, this, parentalTaskResetEvent);
+            lock (this.tasksQueue)
+            {
+                this.tasksQueue.Enqueue(() => myTask.Compute());
+            }
+
+            this.autoResetEventForCorrectWaitingForTasks.Set();
+            return myTask;
+        }
     }
 
     /// <summary>
@@ -95,19 +102,22 @@ public class MyThreadPool
     /// <exception cref="EndlessFunctionException">Throws if the function hasn't been finished for definite time.</exception>
     public void ShutDown()
     {
-        this.cancellationTokenSource.Cancel();
-        this.manualResetEvent.Set();
-        for (var i = 0; i < this.myThreadArray.Length; ++i)
+        lock (this)
         {
-            this.myThreadArray[i].ThreadJoin(this.millisecondsTimeoutForTaskInJoiningThread);
-            if (!this.myThreadArray[i].IsWaiting)
+            this.cancellationTokenSource.Cancel();
+            this.manualResetEventForCorrectWaitingForTasks.Set();
+            for (var i = 0; i < this.myThreadArray.Length; ++i)
             {
-                throw new EndlessFunctionException("The function hasn't been completed" +
-                    $" for {this.millisecondsTimeoutForTaskInJoiningThread} milliseconds");
+                this.myThreadArray[i].ThreadJoin(this.millisecondsTimeoutForTaskInJoiningThread);
+                if (!this.myThreadArray[i].IsWaiting)
+                {
+                    throw new EndlessFunctionException("The function hasn't been completed" +
+                        $" for {this.millisecondsTimeoutForTaskInJoiningThread} milliseconds");
+                }
             }
-        }
 
-        this.IsShutdownRequested = true;
+            this.IsShutdownRequested = true;
+        }
     }
 
     private class MyThread
@@ -130,7 +140,7 @@ public class MyThreadPool
         {
             while (!token.IsCancellationRequested)
             {
-                WaitHandle.WaitAny(this.myThreadPool.resetEventsArray);
+                WaitHandle.WaitAny(this.myThreadPool.resetEventsArrayForCorrectWaitingForTasks);
                 if (token.IsCancellationRequested)
                 {
                     break;
@@ -148,13 +158,16 @@ public class MyThreadPool
                     }
                 }
 
-                if (this.myThreadPool.tasksQueue.Count > 0)
+                lock (this.myThreadPool.tasksQueue)
                 {
-                    this.myThreadPool.manualResetEvent.Set();
-                }
-                else
-                {
-                    this.myThreadPool.manualResetEvent.Reset();
+                    if (this.myThreadPool.tasksQueue.Count > 0)
+                    {
+                        this.myThreadPool.manualResetEventForCorrectWaitingForTasks.Set();
+                    }
+                    else
+                    {
+                        this.myThreadPool.manualResetEventForCorrectWaitingForTasks.Reset();
+                    }
                 }
             }
         }
@@ -162,6 +175,143 @@ public class MyThreadPool
         public void ThreadJoin(int millisecondsTimeoutForTaskInJoiningThread)
         {
             this.realThread.Join(millisecondsTimeoutForTaskInJoiningThread);
+        }
+    }
+
+    /// <summary>
+    /// Implements task abstraction.
+    /// </summary>
+    /// <typeparam name="TResult">Return value type of task function.</typeparam>
+    private class MyTask<TResult> : IMyTask<TResult>
+    {
+        private bool isContinuation;
+        private Func<TResult> function;
+        private TResult? result;
+        private bool isResultReady;
+
+        private List<Action> continuationTaskActions;
+
+        private ManualResetEvent accessToResultEvent;
+        private ManualResetEvent? parentalContinuationResetEvent;
+        private ManualResetEvent continuationResetEvent;
+
+        private Exception? caughtException;
+        private MyThreadPool myThreadPool;
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="MyTask{TResult}"/> class.
+        /// </summary>
+        /// <param name="function">Task function.</param>
+        /// <param name="myThreadPool">ThreadPool that will execute this task.</param>
+        /// <param name="previousTaskContinuationResetEvent">Parental task ManualResetEvent (for continuation task).</param>
+        public MyTask(
+            Func<TResult> function,
+            MyThreadPool myThreadPool,
+            ManualResetEvent? previousTaskContinuationResetEvent = null)
+        {
+            this.function = function;
+            this.continuationTaskActions = new List<Action>();
+            this.accessToResultEvent = new ManualResetEvent(false);
+            this.myThreadPool = myThreadPool;
+            if (previousTaskContinuationResetEvent != null)
+            {
+                this.isContinuation = true;
+            }
+
+            this.parentalContinuationResetEvent = previousTaskContinuationResetEvent;
+            this.continuationResetEvent = new ManualResetEvent(false);
+        }
+
+        /// <summary>
+        /// Gets a value indicating whether the task result is ready.
+        /// </summary>
+        public bool IsCompleted => this.isResultReady;
+
+        /// <summary>
+        /// Gets the task result.
+        /// </summary>
+        public TResult Result
+        {
+            get
+            {
+                if (this.myThreadPool.IsShutdownRequested && !this.isResultReady)
+                {
+                    throw new ShutdownRequestedException("Function wasn't started when the Shutdown was requested.");
+                }
+
+                this.accessToResultEvent.WaitOne();
+                if (this.caughtException != null)
+                {
+                    throw new AggregateException(this.caughtException);
+                }
+
+                return this.result!;
+            }
+        }
+
+        /// <summary>
+        /// Creates a new task based on this task.
+        /// </summary>
+        /// <typeparam name="TNewResult">Return value type for the new task function.</typeparam>
+        /// <param name="func">Intermediate function for creating a new task.</param>
+        /// <returns>Task with new return value type of the function.</returns>
+        public IMyTask<TNewResult> ContinueWith<TNewResult>(Func<TResult, TNewResult> func)
+        {
+            if (this.result != null)
+            {
+                return this.myThreadPool.Submit(() => func(this.Result), this.continuationResetEvent);
+            }
+
+            var continuationTask = new MyTask<TNewResult>(
+                () => func(this.Result),
+                this.myThreadPool,
+                this.continuationResetEvent);
+            lock (this.continuationTaskActions)
+            {
+                this.continuationTaskActions.Add(() => continuationTask.Compute());
+            }
+
+            return continuationTask;
+        }
+
+        /// <summary>
+        /// Calculates task result.
+        /// </summary>
+        public void Compute()
+        {
+            try
+            {
+                lock (this.continuationTaskActions)
+                {
+                    if (this.continuationTaskActions.Count > 0)
+                    {
+                        foreach (var continuationTaskAction in this.continuationTaskActions)
+                        {
+                            this.myThreadPool.Submit(() => continuationTaskAction, this.parentalContinuationResetEvent);
+                        }
+                    }
+                }
+
+                if (this.isContinuation)
+                {
+                    this.parentalContinuationResetEvent!.WaitOne();
+                }
+
+                this.result = this.function();
+            }
+            catch (Exception ex)
+            {
+                this.caughtException = ex;
+            }
+
+            this.Notify();
+        }
+
+        private void Notify()
+        {
+            this.isResultReady = true;
+            this.accessToResultEvent.Set();
+            this.continuationResetEvent.Set();
         }
     }
 }

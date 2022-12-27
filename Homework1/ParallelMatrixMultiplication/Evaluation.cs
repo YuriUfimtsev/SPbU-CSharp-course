@@ -74,8 +74,5 @@ public class Evaluation
     /// </summary>
     /// <returns>standard deviation.</returns>
     public double EvaluateStandardDeviation()
-    {
-        var standardDeviation = Math.Round(Math.Sqrt(this.EvaluateVariance()), 2);
-        return standardDeviation;
-    }
+        => Math.Round(Math.Sqrt(this.EvaluateVariance()), 2);
 }

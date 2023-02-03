@@ -8,8 +8,8 @@ namespace Lazy;
 /// <typeparam name="T"> The type of the return value of the lazy object function.</typeparam>
 public class MultiThreadedLazy<T> : ILazy<T>
 {
-    private Func<T>? supplier;
-    private object? result;
+    private Func<T?>? supplier;
+    private T? result;
     private volatile bool isResultCalculated;
     private object synchronizationObject;
 
@@ -17,7 +17,7 @@ public class MultiThreadedLazy<T> : ILazy<T>
     /// Initializes a new instance of the <see cref="MultiThreadedLazy{T}"/> class.
     /// </summary>
     /// <param name="supplier"> Lazy object function.</param>
-    public MultiThreadedLazy(Func<T> supplier)
+    public MultiThreadedLazy(Func<T?> supplier)
     {
         this.supplier = supplier;
         this.synchronizationObject = new object();
@@ -36,13 +36,13 @@ public class MultiThreadedLazy<T> : ILazy<T>
             {
                 if (!this.isResultCalculated)
                 {
-                    Volatile.Write(ref this.result, this.supplier!());
+                    this.result = this.supplier!();
                     this.isResultCalculated = true;
                     this.supplier = null;
                 }
             }
         }
 
-        return (T?)this.result;
+        return this.result;
     }
 }

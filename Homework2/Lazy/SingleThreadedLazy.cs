@@ -6,7 +6,7 @@
 /// <typeparam name="T"> The type of the return value of the lazy object function.</typeparam>
 public class SingleThreadedLazy<T> : ILazy<T>
 {
-    private readonly Func<T> supplier;
+    private Func<T?>? supplier;
     private T? result;
     private bool isResultReady;
 
@@ -28,8 +28,9 @@ public class SingleThreadedLazy<T> : ILazy<T>
     {
         if (!this.isResultReady)
         {
-            this.result = this.supplier();
+            this.result = this.supplier!();
             this.isResultReady = true;
+            this.supplier = null;
         }
 
         return this.result;

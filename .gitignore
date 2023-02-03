@@ -3,8 +3,6 @@
 ##
 ## Get latest from https://github.com/github/gitignore/blob/master/VisualStudio.gitignore
 
-!*.dll
-
 # Ignore unimportant files
 Homework1/ParallelMatrixMultiplicationTests/Properties/Resources.Designer.cs
 Homework1/ParallelMatrixMultiplicationTests/Properties/Resources.resx

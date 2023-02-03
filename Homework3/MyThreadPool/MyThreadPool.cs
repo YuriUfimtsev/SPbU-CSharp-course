@@ -15,7 +15,7 @@ public class MyThreadPool
     private MyThread[] myThreadArray;
     private CancellationTokenSource cancellationTokenSource;
     private AutoResetEvent newTaskEvent;
-    private ManualResetEvent HasTasksInQueueEvent;
+    private ManualResetEvent hasTasksInQueueEvent;
     private WaitHandle[] resetEventsArrayForCorrectWaitingForTasks;
     private object lockObject;
 
@@ -40,11 +40,11 @@ public class MyThreadPool
         this.myThreadArray = new MyThread[threadCount];
         this.cancellationTokenSource = new CancellationTokenSource();
         this.newTaskEvent = new AutoResetEvent(false);
-        this.HasTasksInQueueEvent = new ManualResetEvent(false);
+        this.hasTasksInQueueEvent = new ManualResetEvent(false);
         this.resetEventsArrayForCorrectWaitingForTasks = new WaitHandle[2]
         {
             this.newTaskEvent,
-            this.HasTasksInQueueEvent,
+            this.hasTasksInQueueEvent,
         };
         for (var i = 0; i < threadCount; ++i)
         {
@@ -107,7 +107,7 @@ public class MyThreadPool
         lock (this.lockObject)
         {
             this.cancellationTokenSource.Cancel();
-            this.HasTasksInQueueEvent.Set();
+            this.hasTasksInQueueEvent.Set();
             for (var i = 0; i < this.myThreadArray.Length; ++i)
             {
                 this.myThreadArray[i].ThreadJoin(this.millisecondsTimeoutForTaskInJoiningThread);
@@ -152,11 +152,11 @@ public class MyThreadPool
                 {
                     if (this.myThreadPool.tasksQueue.Count > 0)
                     {
-                        this.myThreadPool.HasTasksInQueueEvent.Set();
+                        this.myThreadPool.hasTasksInQueueEvent.Set();
                     }
                     else
                     {
-                        this.myThreadPool.HasTasksInQueueEvent.Reset();
+                        this.myThreadPool.hasTasksInQueueEvent.Reset();
                     }
                 }
 
@@ -176,11 +176,11 @@ public class MyThreadPool
                 {
                     if (this.myThreadPool.tasksQueue.Count > 0)
                     {
-                        this.myThreadPool.HasTasksInQueueEvent.Set();
+                        this.myThreadPool.hasTasksInQueueEvent.Set();
                     }
                     else
                     {
-                        this.myThreadPool.HasTasksInQueueEvent.Reset();
+                        this.myThreadPool.hasTasksInQueueEvent.Reset();
                     }
                 }
             }

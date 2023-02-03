@@ -329,9 +329,8 @@ public class MyThreadPoolTests
             manualResetEvent.Set();
             result = (await submitTask).Result;
         }
-        catch (AggregateException exception)
+        catch (InvalidOperationException)
         {
-            Assert.That(exception.InnerExceptions[0].GetType(), Is.EqualTo(typeof(InvalidOperationException)));
             Assert.Pass();
         }
 

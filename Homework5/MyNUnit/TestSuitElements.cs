@@ -3,7 +3,7 @@
 /// <summary>
 /// Provides information about the test suit elements types.
 /// </summary>
-public class TestSuitElements
+public class TestSuiteElements
 {
     /// <summary>
     /// Possible test suit element type.

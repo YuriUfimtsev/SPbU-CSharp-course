@@ -11,7 +11,6 @@ using System.Diagnostics;
 public class Test
 {
     private readonly Type? expectedException;
-    private readonly object classObject;
     private readonly Stopwatch stopwatch;
     private readonly string reasonForIgnoring;
     private readonly bool isIgnored;
@@ -21,7 +20,8 @@ public class Test
     /// Initializes a new instance of the <see cref="Test"/> class.
     /// </summary>
     /// <param name="methodInfo">Method information.</param>
-    /// <param name="classObject">Object of the class to which test method belongs.</param>
+    /// <param name="constructorInfo">Constructor of the class to which test method belongs.</param>
+    /// <param name="classObject">Object of the class to which test method belongs. </param>
     public Test(MethodInfo methodInfo, object classObject)
     {
         this.methodInfo = methodInfo;
@@ -29,9 +29,14 @@ public class Test
         this.isIgnored = ((TestAttribute)testAttribute!).Ignore != null;
         this.reasonForIgnoring = this.isIgnored ? ((TestAttribute)testAttribute!).Ignore! : string.Empty;
         this.expectedException = ((TestAttribute)testAttribute!).Expected;
-        this.classObject = classObject;
         this.stopwatch = new ();
+        this.ClassObject = classObject;
     }
+
+    /// <summary>
+    /// Gets object of the class to which test method belongs.
+    /// </summary>
+    public object? ClassObject { get; }
 
     /// <summary>
     /// Runs the test.
@@ -48,7 +53,7 @@ public class Test
         this.stopwatch.Start();
         try
         {
-            this.methodInfo.Invoke(this.classObject, new object[] { });
+            this.methodInfo.Invoke(this.ClassObject, new object[] { });
             this.stopwatch.Stop();
             return new TestInfo(this.methodInfo.Name, this.stopwatch.ElapsedMilliseconds, TestStatus.Status.Passed);
         }

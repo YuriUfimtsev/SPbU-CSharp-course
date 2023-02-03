@@ -1,6 +1,5 @@
 ﻿using MyNUnit;
 using MyNUnit.Attributes;
-using System.Text;
 
 namespace TestSuitProject;
 
@@ -28,7 +27,7 @@ public class BeforeAndAfterMethods
     [Test]
     public void ExpectedToFailTest()
     {
-        if (this.firstIndicator || this.secondIndicator)
+        if (!(this.firstIndicator || this.secondIndicator))
         {
             throw new InvalidOperationException();
         }

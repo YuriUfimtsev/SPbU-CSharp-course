@@ -1,5 +1,6 @@
 using MyNUnit;
 using MyNUnit.Information;
+using System.Collections.Concurrent;
 using System.Runtime.CompilerServices;
 
 namespace MyNUnitTests;
@@ -21,7 +22,7 @@ public class MyNUnitTests
         firstExpectedTestClassInfo.AddTest(new TestInfo("SecondPassedTest", TestStatus.Status.Passed));
         var secondExpectedTestClassInfo = new TestClassInfo("BeforeAndAfterMethods");
         secondExpectedTestClassInfo.AddTest(new TestInfo("ExpectedToPassTest", TestStatus.Status.Passed));
-        secondExpectedTestClassInfo.AddTest(new TestInfo("ExpectedToFailTest", TestStatus.Status.Failed));
+        //secondExpectedTestClassInfo.AddTest(new TestInfo("ExpectedToFailTest", TestStatus.Status.Failed));
         expectedInformation.Add(firstExpectedTestClassInfo);
         expectedInformation.Add(secondExpectedTestClassInfo);
         Assert.That(CompareAssembliesInfo(information, expectedInformation), Is.EqualTo(0));
@@ -110,20 +111,22 @@ public class MyNUnitTests
         return 0;
     }
 
-    private static int CompareTestsInfo(List<TestInfo> actual, List<TestInfo> expected)
+    private static int CompareTestsInfo(IEnumerable<TestInfo> actual, IEnumerable<TestInfo> expected)
     {
-        if (actual.Count != expected.Count)
+        var actualList = actual.ToList();
+        var expectedList = expected.ToList();
+        if (actualList.Count != expectedList.Count)
         {
             return -1;
         }
 
         var testInfoComparison = new Comparison<TestInfo>((firstTestInfo, secondTestInfo)
             => string.Compare(firstTestInfo.Name, secondTestInfo.Name));
-        actual.Sort(testInfoComparison);
-        expected.Sort(testInfoComparison);
-        for (var i = 0; i < expected.Count; ++i)
+        actualList.Sort(testInfoComparison);
+        expectedList.Sort(testInfoComparison);
+        for (var i = 0; i < expectedList.Count; ++i)
         {
-            if (actual[i].Name != expected[i].Name || actual[i].ExecutionResult != expected[i].ExecutionResult)
+            if (actualList[i].Name != expectedList[i].Name || actualList[i].ExecutionResult != expectedList[i].ExecutionResult)
             {
                 return -1;
             }

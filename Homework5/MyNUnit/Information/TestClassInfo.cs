@@ -1,4 +1,6 @@
-﻿namespace MyNUnit.Information;
+﻿using System.Collections.Concurrent;
+
+namespace MyNUnit.Information;
 
 /// <summary>
 /// Provides information about running the test class.
@@ -30,7 +32,7 @@ public class TestClassInfo
     /// <summary>
     /// Gets information about each test from the test suite.
     /// </summary>
-    public List<TestInfo> TestsInfo { get; private set; }
+    public ConcurrentBag<TestInfo> TestsInfo { get; private set; }
 
     /// <summary>
     /// Gets names of test methods with the wrong return type or the wrong number of parameters.

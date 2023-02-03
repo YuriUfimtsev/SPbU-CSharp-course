@@ -19,7 +19,7 @@ public class TestAttribute : Attribute
     /// </summary>
     /// <param name="expectedException">The type of exception that is expected to be thrown in test method.</param>
     public TestAttribute(Type expectedException)
-    : this(expectedException, null)
+        : this(expectedException, null)
     {
     }
 
@@ -28,7 +28,7 @@ public class TestAttribute : Attribute
     /// </summary>
     /// <param name="reasonForIgnoring">The reason why the test method shouldn't be run.</param>
     public TestAttribute(string reasonForIgnoring)
-    : this(null, reasonForIgnoring)
+        : this(null, reasonForIgnoring)
     {
     }
 

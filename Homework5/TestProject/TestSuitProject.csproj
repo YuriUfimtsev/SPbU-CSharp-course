@@ -8,6 +8,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="TestSuitProject.dll" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\MyNUnit\MyNUnit.csproj" />
   </ItemGroup>
 

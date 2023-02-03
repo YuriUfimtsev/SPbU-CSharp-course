@@ -28,25 +28,21 @@ public static class TestRunner
             Parallel.ForEach(classesTypes, (classType) =>
             {
                 var constructorInfo = classType.GetConstructor(Type.EmptyTypes);
-                var classObject = constructorInfo!.Invoke(new object[] { });
                 var methods = classType.GetTypeInfo().DeclaredMethods;
-                var (tests, incorrectTestsNames) = GetTests(GetMethodsWithAttribute(methods, typeof(TestAttribute)), classObject);
-                var (beforeElements, incorrectBeforeElementsNames) = GetTestSuitElements(
-                        GetMethodsWithAttribute(methods, typeof(BeforeAttribute)),
-                        TestSuitElements.TestSuitElementType.Before,
-                        classObject);
-                var (afterElements, incorrectAfterElementsNames) = GetTestSuitElements(
-                        GetMethodsWithAttribute(methods, typeof(AfterAttribute)),
-                        TestSuitElements.TestSuitElementType.After,
-                        classObject);
-                var (beforeClassElements, incorrectBeforeClassElementsNames) = GetTestSuitElements(
+                var (beforeClassElements, incorrectBeforeClassElementsNames) = GetTestSuiteElements(
                         GetMethodsWithAttribute(methods, typeof(BeforeClassAttribute)),
-                        TestSuitElements.TestSuitElementType.BeforeClass,
-                        classObject);
-                var (afterClassElements, incorrectAfterClassElementsNames) = GetTestSuitElements(
+                        TestSuiteElements.TestSuitElementType.BeforeClass);
+                RunBeforeClassElements(beforeClassElements);
+                var (tests, incorrectTestsNames) = GetTests(GetMethodsWithAttribute(methods, typeof(TestAttribute)), constructorInfo);
+                var (beforeElements, incorrectBeforeElementsNames) = GetTestSuiteElements(
+                        GetMethodsWithAttribute(methods, typeof(BeforeAttribute)),
+                        TestSuiteElements.TestSuitElementType.Before);
+                var (afterElements, incorrectAfterElementsNames) = GetTestSuiteElements(
+                        GetMethodsWithAttribute(methods, typeof(AfterAttribute)),
+                        TestSuiteElements.TestSuitElementType.After);
+                var (afterClassElements, incorrectAfterClassElementsNames) = GetTestSuiteElements(
                         GetMethodsWithAttribute(methods, typeof(AfterClassAttribute)),
-                        TestSuitElements.TestSuitElementType.AfterClass,
-                        classObject);
+                        TestSuiteElements.TestSuitElementType.AfterClass);
                 var incorrectTestSuitElementsNames = ConcatenateLists(new[]
                 {
                     incorrectBeforeElementsNames,
@@ -57,15 +53,15 @@ public static class TestRunner
                 var testSuitStorage = new TestSuitStorage(
                     tests,
                     incorrectTestsNames,
-                    beforeElements,
-                    afterElements,
+                    GetThreadSafeCollection(beforeElements),
+                    GetThreadSafeCollection(afterElements),
                     beforeClassElements,
                     afterClassElements,
                     incorrectTestSuitElementsNames);
                 var testClassInfo = new TestClassInfo(classType.Name);
                 testClassInfo.AddIncorrectTestsNames(testSuitStorage.IncorrectFormatTestsNames);
                 testClassInfo.AddIncorrectTestSuitElementsNames(testSuitStorage.IncorrectFormatTestSuitElementsNames);
-                RunTestSuit(testSuitStorage, testClassInfo);
+                RunTestSuite(testSuitStorage, testClassInfo);
                 testClassesInfo.Add(testClassInfo);
             });
         });
@@ -121,7 +117,7 @@ public static class TestRunner
         }
     }
 
-    private static int CalculateTestsNumber(List<TestInfo> testsInformation, TestStatus.Status requiredTestStatus)
+    private static int CalculateTestsNumber(IEnumerable<TestInfo> testsInformation, TestStatus.Status requiredTestStatus)
     {
         var satisfyingTestsNumber = 0;
         foreach (var test in testsInformation)
@@ -135,31 +131,35 @@ public static class TestRunner
         return satisfyingTestsNumber;
     }
 
-    private static void RunTestSuit(TestSuitStorage testSuitStorage, TestClassInfo testClassInfo)
+    private static void RunBeforeClassElements(List<TestSuiteElement> beforeClassElements)
     {
-        var stopWatch = new Stopwatch();
-        stopWatch.Start();
-        foreach (var beforeClassElement in testSuitStorage.BeforeClassElements)
+        foreach (var beforeClassElement in beforeClassElements)
         {
             beforeClassElement.Run();
         }
+    }
 
-        foreach (var test in testSuitStorage.Tests)
+    private static void RunTestSuite(TestSuitStorage testSuiteStorage, TestClassInfo testClassInfo)
+    {
+        var stopWatch = new Stopwatch();
+        stopWatch.Start();
+
+        Parallel.ForEach(testSuiteStorage.Tests, (test) =>
         {
-            foreach (var beforeElement in testSuitStorage.BeforeElements)
+            foreach (var beforeElement in testSuiteStorage.BeforeElements)
             {
-                beforeElement.Run();
+                beforeElement.Run(test.ClassObject);
             }
 
             testClassInfo.AddTest(test.Run());
 
-            foreach (var afterElement in testSuitStorage.AfterElements)
+            foreach (var afterElement in testSuiteStorage.AfterElements)
             {
-                afterElement.Run();
+                afterElement.Run(test.ClassObject);
             }
-        }
+        });
 
-        foreach (var afterClassElement in testSuitStorage.AfterClassElements)
+        foreach (var afterClassElement in testSuiteStorage.AfterClassElements)
         {
             afterClassElement.Run();
         }
@@ -170,7 +170,7 @@ public static class TestRunner
 
     private static (List<Test> Tests, List<string> IncorrectTestsNames) GetTests(
         IEnumerable<MethodInfo> methodInfoTestsCollection,
-        object classObject)
+        ConstructorInfo? constructorInfo)
     {
         var tests = new List<Test>();
         var incorrectTestsNames = new List<string>();
@@ -182,6 +182,7 @@ public static class TestRunner
             }
             else
             {
+                var classObject = constructorInfo!.Invoke(new object[] { });
                 var test = new Test(methodInfo, classObject);
                 tests.Add(test);
             }
@@ -190,12 +191,14 @@ public static class TestRunner
         return (tests, incorrectTestsNames);
     }
 
-    private static (List<TestSuitElement> TestSuitElements, List<string> IncorrectTestSuitElementsNames) GetTestSuitElements(
+    private static ConcurrentBag<TestSuiteElement> GetThreadSafeCollection(IEnumerable<TestSuiteElement> collection)
+        => new ConcurrentBag<TestSuiteElement>(collection);
+
+    private static (List<TestSuiteElement> TestSuiteElements, List<string> IncorrectTestSuiteElementsNames) GetTestSuiteElements(
         IEnumerable<MethodInfo> methodInfoSuitElementsCollection,
-        TestSuitElements.TestSuitElementType elementsType,
-        object classObject)
+        TestSuiteElements.TestSuitElementType elementsType)
     {
-        var testSuitElements = new List<TestSuitElement>();
+        var testSuitElements = new List<TestSuiteElement>();
         var incorrectTestSuitElementsNames = new List<string>();
         var beforeAndAfterCondition = (MethodInfo methodInfo)
             => methodInfo.GetParameters().Length == 0
@@ -204,14 +207,14 @@ public static class TestRunner
             => methodInfo.GetParameters().Length == 0
             && methodInfo.ReturnType == typeof(void)
             && methodInfo.IsStatic;
-        var condition = elementsType == TestSuitElements.TestSuitElementType.Before
-            || elementsType == TestSuitElements.TestSuitElementType.After
+        var condition = elementsType == TestSuiteElements.TestSuitElementType.Before
+            || elementsType == TestSuiteElements.TestSuitElementType.After
             ? beforeAndAfterCondition : beforeClassAndAfterClassCondition;
         foreach (var methodInfo in methodInfoSuitElementsCollection)
         {
             if (condition(methodInfo))
             {
-                var testSuitElement = new TestSuitElement(methodInfo, elementsType, classObject);
+                var testSuitElement = new TestSuiteElement(methodInfo, elementsType);
                 testSuitElements.Add(testSuitElement);
             }
             else

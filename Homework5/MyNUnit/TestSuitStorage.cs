@@ -1,4 +1,6 @@
-﻿namespace MyNUnit;
+﻿using System.Collections.Concurrent;
+
+namespace MyNUnit;
 
 /// <summary>
 /// Stores information about the test suit.
@@ -19,10 +21,10 @@ public class TestSuitStorage
     public TestSuitStorage(
         List<Test> tests,
         List<string> incorrectTestsNames,
-        List<TestSuitElement> beforeElements,
-        List<TestSuitElement> afterElements,
-        List<TestSuitElement> beforeClassElements,
-        List<TestSuitElement> afterClassElements,
+        ConcurrentBag<TestSuiteElement> beforeElements,
+        ConcurrentBag<TestSuiteElement> afterElements,
+        List<TestSuiteElement> beforeClassElements,
+        List<TestSuiteElement> afterClassElements,
         List<string> incorrectTestSuitElementsNames)
     {
         this.Tests = tests;
@@ -47,22 +49,22 @@ public class TestSuitStorage
     /// <summary>
     /// Gets the test suit elements corresponding to the Before attribute.
     /// </summary>
-    public List<TestSuitElement> BeforeElements { get; }
+    public ConcurrentBag<TestSuiteElement> BeforeElements { get; }
 
     /// <summary>
     /// Gets the test suit elements corresponding to the After attribute.
     /// </summary>
-    public List<TestSuitElement> AfterElements { get; }
+    public ConcurrentBag<TestSuiteElement> AfterElements { get; }
 
     /// <summary>
     /// Gets the test suit elements corresponding to the BeforeClass attribute.
     /// </summary>
-    public List<TestSuitElement> BeforeClassElements { get; }
+    public List<TestSuiteElement> BeforeClassElements { get; }
 
     /// <summary>
     /// Gets the test suit elements corresponding to the AfterClass attribute.
     /// </summary>
-    public List<TestSuitElement> AfterClassElements { get; }
+    public List<TestSuiteElement> AfterClassElements { get; }
 
     /// <summary>
     /// Gets the names of the wrong format test suit methods.

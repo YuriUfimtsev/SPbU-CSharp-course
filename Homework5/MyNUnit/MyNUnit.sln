@@ -10,13 +10,13 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 		.editorconfig = .editorconfig
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MyNUnitTests", "..\MyNUnitTests\MyNUnitTests.csproj", "{D257CBD8-13F7-4B2E-921A-78C75ED4E041}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MyNUnitTests", "..\MyNUnitTests\MyNUnitTests.csproj", "{D257CBD8-13F7-4B2E-921A-78C75ED4E041}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestSuitProject", "..\TestProject\TestSuitProject.csproj", "{D5981D6A-9557-4EBC-9AAF-9DEE8EFF9E8B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TestSuitProject", "..\TestProject\TestSuitProject.csproj", "{D5981D6A-9557-4EBC-9AAF-9DEE8EFF9E8B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DetailedTestsProject", "..\DetailedTestsProject\DetailedTestsProject.csproj", "{2444BF0A-6ABC-44B7-892C-5D7355072923}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "DetailedTestsProject", "..\DetailedTestsProject\DetailedTestsProject.csproj", "{2444BF0A-6ABC-44B7-892C-5D7355072923}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "InvalidFormatTestSuitElementsProject", "..\InvalidFormatTestSuitElementsProject\InvalidFormatTestSuitElementsProject.csproj", "{EF5E19B5-E333-4541-9788-314C40FC6134}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "InvalidFormatTestSuitElementsProject", "..\InvalidFormatTestSuitElementsProject\InvalidFormatTestSuitElementsProject.csproj", "{EF5E19B5-E333-4541-9788-314C40FC6134}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

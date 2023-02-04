@@ -38,7 +38,7 @@ public class ServerTests
     [Test]
     public async Task StandartGetResponseTest()
     {
-        var server = new Server(8112, cancellationTokenSource.Token);
+        var server = new Server(8118, cancellationTokenSource.Token);
         Task.Run(async () => await server.Start());
         var result = await ClientMoq(8112, testGetRequest);
         cancellationTokenSource.Cancel();

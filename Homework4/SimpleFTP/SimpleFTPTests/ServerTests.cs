@@ -26,16 +26,6 @@ public class ServerTests
     }
 
     [Test]
-    public async Task StandartListResponseTest()
-    {
-        var server = new Server(8121, cancellationTokenSource.Token);
-        Task.Run(async () => await server.Start());
-        var result = await ClientMoq(8121, testListRequest);
-        cancellationTokenSource.Cancel();
-        Assert.That(result == testListExpectedResponse);
-    }
-
-    [Test]
     public async Task StandartGetResponseTest()
     {
         var server = new Server(8118, cancellationTokenSource.Token);

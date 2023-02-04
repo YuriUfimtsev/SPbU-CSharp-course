@@ -40,7 +40,7 @@ public class ServerTests
     {
         var server = new Server(8118, cancellationTokenSource.Token);
         Task.Run(async () => await server.Start());
-        var result = await ClientMoq(8112, testGetRequest);
+        var result = await ClientMoq(8118, testGetRequest);
         cancellationTokenSource.Cancel();
         Assert.That(result.Remove(result.Length - 2) == testGetExpectedResponse.Remove(testGetExpectedResponse.Length - 1));
     }

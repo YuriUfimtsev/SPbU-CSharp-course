@@ -9,9 +9,6 @@ public class ServerTests
 {
     private CancellationTokenSource cancellationTokenSource;
 
-    private static string testListRequest = "1 ../../../TestDirectory/NestedFolder";
-    private static string testListExpectedResponse = "1 ../../../TestDirectory/NestedFolder/Text1.txt false";
-
     private static string testGetRequest = "2 ../../../TestDirectory/TextFirst.txt";
     private static byte[] textFileBytes = File.ReadAllBytes("../../../TestDirectory/TextFirst.txt");
     private static string testGetExpectedResponse = $"{System.Text.Encoding.Default.GetString(textFileBytes)}\n";
